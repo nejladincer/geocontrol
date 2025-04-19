@@ -66,32 +66,32 @@ GeoControl is a software system designed for monitoring physical and environment
 
 # Business Model
 
-- **<span style="color: #92d050;" >Value Proposition</span>**: **Smart monitoring** of both hydrogeological parameters of large-scale territories and physical parameters of public/private entities. 
+- **Value Proposition**: **Smart monitoring** of both hydrogeological parameters of large-scale territories and physical parameters of public/private entities. 
 <br>
 
-- **<span style="color: #92d050;" >Key Activities</span>**: 
+- **Key Activities**: 
   - **Installment of sensors** in the target environment, together with the Gateway and related control firmware 
   - **Production** of sensors and gateways 
   - **Development** of gateway’s control firmware and user Dashboard for managing their own network 
   - **Automated data collection** and anomaly detection 
 <br>
-- **<span style="color: #92d050;" >Key Resources</span>**: 
+- **Key Resources**: 
   - **SW Development program licenses**
   - **Storeroom for hardware** (sensors and gateways) 
   - **Hosting infrastructure** 
 <br>
-- **<span style="color: #92d050;" >Key Partners</span>**:
+- **Key Partners**:
   - **HW Suppliers** (gateways + sensors) 
   - Companies which develop the SW used by the development team
   - **HW Installment companies**  
   - **HW Maintenance companies** 
   - **Cloud providers** (hosting, scaling) 
 <br>
-- **<span style="color: #92d050;" >Customer Segments</span>**:
+- **Customer Segments**:
   -  **Regions/districts** who want to monitor their environmental parameters in real-time 
   - **Public/private companies** who want to monitor the company’s parameters 
 <br>
-- **<span style="color: #92d050;" >Channels</span>**:
+- **Channels**:
   - **GeoControl website**:
     - *Evaluation*: Show off features of GeoControl solution 
     - *Purchase*: Purchasing options (subscription) 
@@ -101,14 +101,14 @@ GeoControl is a software system designed for monitoring physical and environment
   - **Online marketing** (*Awareness*) 
   - **GeoControl HQs** (*HW Delivery*) 
 <br>
-- **<span style="color: #92d050;" >Customer Relationships</span>**:
+- **Customer Relationships**:
   - **Customer support email** to ask questions and get hands-on support on hw maintenance and installment from certified technicians 
   - **Website FAQ page** 
   - **Weekly tips-and-tricks** or “did you know…” emails sent to customers 
   - **GeoControl social media accounts** 
   - **Dedicated technical support** for enterprise clients 
 <br>
-- **<span style="color: #92d050;" >Cost Structure</span>**: 
+- **Cost Structure**: 
   - **HW Installment performance cost** 
   - Cost of **sw development** 
   - Cost of **IDE licenses and general productivity programs** (Office365) 
@@ -118,7 +118,7 @@ GeoControl is a software system designed for monitoring physical and environment
   - **Social media accounts managing** 
   - **Development team salary** 
 <br>
-- **<span style="color: #92d050;" >Revenue Streams</span>**:
+- **Revenue Streams**:
   - **HW Installment & Upgrading**  
   - **Subscription payments** to use the service  
   - **Maintenance & support** package 
@@ -159,21 +159,21 @@ GeoControl is a software system designed for monitoring physical and environment
 
 # Stories and personas
 
-- **<span style="color: #92d050;" >Persona 1</span>**
+- **Persona 1**
   - **Role**: *Administrator*
   - **Goals**:
     - Create new users with different access levels based on their role, or delete and update existing users 
     - Retrieve the list of all users or a specific user
     - All of Operator’s capabilities 
 <br>
-- **<span style="color: #92d050;">Persona 2</span>**
+- **Persona 2**
   - **Role**: *Operator*
   - **Goals**:
     - Manage (add/change/remove) networks, gateways and sensors 
     - Manually insert measurements for a sensor 
     - All of Viewer’s capabilities 
 <br>
-- **<span style="color: #92d050;">Persona 3</span>**
+- **Persona 3**
   - **Role**: *Viewer*
   - **Goals**:
     - Retrieve measurements and statistics for a set of sensors of a specific network or for a specific sensor 
@@ -185,79 +185,79 @@ GeoControl is a software system designed for monitoring physical and environment
 
 | ID  | Description |
 |-----|-------------|
-| **<span style="color: #92d050;" >[1] Authentication and Authorization</span>** | |
+| **[1] Authentication and Authorization** | |
 | **FR1** | The system shall allow users to log in by submitting a valid combination of username and password. |
 | **FR2** | Upon successful authentication, the system shall return a JSON Web Token (JWT) that must be included in all subsequent API requests. |
 | **FR3** | The system shall enforce role-based access control. Admins have full access; Operators can manage networks and devices but not users; Viewers can only view data. |
-| **<span style="color: #92d050;" >[2] User Management (Admin Only)</span>** | |
+| **[2] User Management (Admin Only)** | |
 | **FR4** | The system shall allow Admin users to create new user accounts by specifying username, password, and role. |
 | **FR5** | The system shall allow Admin users to retrieve a complete list of registered users. |
 | **FR6** | The system shall allow Admin users to query and retrieve details for a specific user by username. |
 | **FR7** | The system shall allow Admin users to remove an existing user **from** the system by specifying their username. |
-| **<span style="color: #92d050;" >[3] Network Management</span>** | |
+| **[3] Network Management** | |
 | **FR8** | The system shall allow Admins and Operators to create a new network identified by a unique alphanumeric code and optional name and description. |
 | **FR9** | The system shall allow any authenticated user to retrieve a list of all networks available in the system. |
 | **FR10** | The system shall allow any authenticated user to query a network by its code and view its information. |
 | **FR11** | The system shall allow Admins and Operators to update any field of an existing network, including the unique code. |
 | **FR12** | The system shall allow Admins and Operators to delete a network by specifying its code. |
-| **<span style="color: #92d050;" >[4] Gateway Management</span>** | |
+| **[4] Gateway Management** | |
 | **FR13** | The system shall allow Admins and Operators to add a gateway (identified by MAC address) to an existing network. |
 | **FR14** | The system shall allow any authenticated user to list all gateways associated with a specific network. |
 | **FR15** | The system shall allow any authenticated user to view details of a specific gateway using the network code and gateway MAC address. |
 | **FR16** | The system shall allow Admins and Operators to update all attributes of a gateway, including its MAC address. |
 | **FR17** | The system shall allow Admins and Operators to delete a gateway by specifying the network code and gateway MAC address. |
-| **<span style="color: #92d050;" >[5] Sensor Management</span>** | |
+| **[5] Sensor Management** | |
 | **FR18** | The system shall allow Admins and Operators to add a sensor (identified by MAC address) to a specified gateway. |
 | **FR19** | The system shall allow any authenticated user to list all sensors connected to a gateway. |
 | **FR20** | The system shall allow any authenticated user to retrieve detailed information of a sensor using the network, gateway, and sensor MAC addresses. |
 | **FR21** | The system shall allow Admins and Operators to update all attributes of a sensor, including its MAC address. |
 | **FR22** | The system shall allow Admins and Operators to delete a sensor by specifying its associated network, gateway, and sensor MAC address. |
-| **<span style="color: #92d050;" >[6] Measurement Management</span>** | |
+| **[6] Measurement Management** | |
 | **FR23** | The system shall allow Admins and Operators to insert one or more measurements for a sensor, each including a numeric value and timestamp. |
 | **FR24** | The system shall automatically convert all sensor timestamps to ISO 8601 UTC format during storage. |
 | **FR25** | The system shall allow any authenticated user to retrieve measurement data for a specific sensor, optionally filtered by date range. |
 | **FR26** | The system shall allow any authenticated user to fetch measurements across an entire network, optionally filtered by a list of sensor MAC addresses and a time range. |
-| **<span style="color: #92d050;" >[7] Statistical Analysis</span>** | |
+| **[7] Statistical Analysis** | |
 | **FR27** | The system shall calculate the mean (μ) and variance (σ²) for a given time interval for one or more sensors. |
 | **FR28** | The system shall calculate upper and lower thresholds using the formula: upperThreshold = μ + 2σ, lowerThreshold = μ - 2σ. |
 | **FR29** | The system shall flag measurement values as outliers if they exceed the upper threshold or fall below the lower threshold. |
 | **FR30** | The system shall allow authenticated users to view calculated mean, variance, and threshold values for a specific sensor. |
 | **FR31** | The system shall allow authenticated users to request aggregated statistics for several sensors in a network during a given time range. |
-| **<span style="color: #92d050;" >[8] Outlier Retrieval</span>** | |
+| **[8] Outlier Retrieval** | |
 | **FR32** | The system shall allow authenticated users to retrieve only the outlier measurements for a particular sensor within a given time range. |
 | **FR33** | The system shall allow authenticated users to retrieve only outlier measurements across multiple sensors in a network, optionally filtered by date range and sensor list. |
-| **<span style="color: #92d050;" >[9] User Profile Management</span>** | |
+| **[9] User Profile Management** | |
 | **FR34** | The system shall allow users to change their personal information. |
 
 ## Non Functional Requirements
 
 | ID   | Type                  | Description | Refers to |
 |------|-----------------------|-------------|-----------|
-| **<span style="color: #92d050;" >[1] Performance Requirements</span>** | | | |
+| **[1] Performance Requirements** | | | |
 | **NFR1** | Performance           | The system shall support near-real-time processing of sensor measurements sent every 10 minutes from multiple gateways without noticeable delay. | |
 | **NFR2** | Performance           | All API endpoints shall return responses within 5 seconds under normal load for standard read operations (e.g., retrieving sensor data). | |
 | **NFR3** | Scalability           | The system shall be capable of handling up to 10,000 sensors and millions of measurements per year across multiple networks. | |
-| **<span style="color: #92d050;">[2] Availability and Reliability</span>** | | | |
+| **[2] Availability and Reliability** | | | |
 | **NFR4** | Availability          | The system shall maintain an availability of at least 99.9% uptime on a yearly basis, excluding scheduled maintenance. | |
 | **NFR5** | Reliability           | The system shall guarantee that no more than six measurements per sensor per year are lost due to processing or transmission failures. | |
 | **NFR6** | Data Integrity        | All incoming sensor data must be reliably stored in the database with transactional consistency to prevent data loss during system faults. | |
-| **<span style="color: #92d050;" >[3] Security Requirements</span>** | | | |
+| **[3] Security Requirements** | | | |
 | **NFR7** | Authentication        | The system shall use JWT (JSON Web Tokens) for stateless authentication of all API requests. | |
 | **NFR8** | Access Control        | The system shall enforce three levels of access: Admin (full), Operator (device and data management), and Viewer (read-only). | |
 | **NFR9** | Data Security         | All HTTP communications between the client and server shall be encrypted using HTTPS. | |
 | **NFR10**| Data Protection       | Passwords shall be securely stored using industry-standard hashing algorithms (e.g., bcrypt, PBKDF2). | |
-| **<span style="color: #92d050;" >[4] Usability Requirements</span>** | | | |
+| **[4] Usability Requirements** | | | |
 | **NFR11**| API Design            | The web client shall interact with the backend via clearly defined and documented RESTful endpoints. | |
 | **NFR12**| Data Formatting       | All date-time values shall be transmitted and stored using ISO 8601 format in UTC, ensuring clarity and interoperability. | |
 | **NFR13**| User Experience       | Clients shall be able to convert UTC timestamps to their local timezone as needed. | |
-| **<span style="color: #92d050;" >[5] Maintainability and Extensibility</span>** | | | |
+| **[5] Maintainability and Extensibility** | | | |
 | **NFR14**| System Architecture   | The system shall follow a modular design for managing networks, gateways, and sensors to allow easy updates or extensions in the future. | |
 | **NFR15**| Documentation         | All REST API endpoints shall be described using the OpenAPI Specification (Swagger) to support automated testing and client integration. | |
 | **NFR16**| Deployment            | The system shall be containerizable (e.g., via Docker) to support simplified deployment, rollback, and scalability. | |
-| **<span style="color: #92d050;" >[6] Data Management and Consistency</span>** | | | |
+| **[6] Data Management and Consistency** | | | |
 | **NFR17**| Data Integrity        | Create, update, and delete operations on users, networks, gateways, and sensors shall be atomic to avoid partial updates and preserve database integrity. | |
 | **NFR18**| Data Validation       | The system shall validate the uniqueness of MAC addresses (for gateways and sensors) and codes (for networks) to prevent duplicates. | |
-| **<span style="color: #92d050;" >[7] Legal and Regulatory Compliance</span>** | | | |
+| **[7] Legal and Regulatory Compliance** | | | |
 | **NFR19**| Compliance            | The system shall comply with any applicable data retention policies defined by the commissioning authority or legal regulations. | |
 | **NFR20**| Auditability          | All changes to critical entities (users, networks, gateways, sensors, and measurements) shall be traceable through logs or versioning mechanisms to support audits. | |
 
