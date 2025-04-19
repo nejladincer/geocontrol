@@ -1,8 +1,8 @@
 # Project Estimation
 
-Date:
+Date: 18.04.2025 
 
-Version:
+Version: v1
 
 # Estimation approach
 
@@ -14,37 +14,45 @@ Consider the GeoControl project as described in the swagger, assume that you are
 
 |                                                                                                         | Estimate |
 | ------------------------------------------------------------------------------------------------------- | -------- |
-| NC = Estimated number of classes to be developed                                                        |          |
-| A = Estimated average size per class, in LOC                                                            |          |
-| S = Estimated size of project, in LOC (= NC \* A)                                                       |          |
-| E = Estimated effort, in person hours (here use productivity 10 LOC per person hour)                    |          |
-| C = Estimated cost, in euro (here use 1 person hour cost = 30 euro)                                     |          |
-| Estimated calendar time, in calendar weeks (Assume team of 4 people, 8 hours per day, 5 days per week ) |          |
+| NC = Estimated number of classes to be developed                                                        |    60    |
+| A = Estimated average size per class, in LOC                                                            |    100   |
+| S = Estimated size of project, in LOC (= NC \* A)                                                       |   6000   |
+| E = Estimated effort, in person hours (here use productivity 10 LOC per person hour)                    |    600   |
+| C = Estimated cost, in euro (here use 1 person hour cost = 30 euro)                                     |  18000   |
+| Estimated calendar time, in calendar weeks (Assume team of 4 people, 8 hours per day, 5 days per week ) |  240 hours (2 hours per person per day for 5 days a week) -> 6 weeks for code part         |
 
 # Estimate by product decomposition
 
 ###
 
-| component name       | Estimated effort (person hours) |
+| Component name       | Estimated effort (person hours) |
 | -------------------- | ------------------------------- |
-| requirement document |                                 |
-| design document      |                                 |
-| code                 |                                 |
-| unit tests           |                                 |
-| api tests            |                                 |
-| management documents |                                 |
+| Requirement document |            20                   |
+| Design document      |           20                    |
+| Code                 | 240 ( 120 backend + 120 frontend) |
+| Unit tests           |           35                    |
+| API tests            |           35                    |
+| Management documents |          10                     |
+| Database modeling    |          20                     |
 
 # Estimate by activity decomposition
 
 ###
 
-| Activity name | Estimated effort (person hours) |
-| ------------- | ------------------------------- |
-|               |                                 |
+| Activity Name              | Estimated Effort (Person Hours) |
+|---------------------------|--------------------------------:|
+| Requirements analysis      | 20                             |
+| Architecture design        | 20                             |
+| Database modeling         | 20                             |
+| Backend implementation    | 120                            |
+| Frontend implementation   | 120                            |
+| Testing (unit + API)      | 70                             |
+| Deployment & dockerization| 30                             |
+| Documentation & final review | 20                           |
 
 ###
 
-Insert here Gantt chart with above activities
+![GanttChart](./images/GeoControlGanttChart.png)
 
 # Summary
 
@@ -52,6 +60,6 @@ Report here the results of the three estimation approaches. The estimates may di
 
 |                                    | Estimated effort | Estimated duration |
 | ---------------------------------- | ---------------- | ------------------ |
-| estimate by size                   |                  |
-| estimate by product decomposition  |                  |
-| estimate by activity decomposition |                  |
+| estimate by size                   |      240         |  6 weeks           |
+| estimate by product decomposition  |     380          |  9 weeks           |
+| estimate by activity decomposition |     420          |  10 weeks          |
