@@ -233,32 +233,32 @@ GeoControl is a software system designed for monitoring physical and environment
 | ID   | Type                  | Description | Refers to |
 |------|-----------------------|-------------|-----------|
 | **[1] Performance Requirements** | | | |
-| **NFR1** | Performance           | The system shall support near-real-time processing of sensor measurements sent every 10 minutes from multiple gateways without noticeable delay. | |
-| **NFR2** | Performance           | All API endpoints shall return responses within 5 seconds under normal load for standard read operations (e.g., retrieving sensor data). | |
-| **NFR3** | Scalability           | The system shall be capable of handling up to 10,000 sensors and millions of measurements per year across multiple networks. | |
+| **NFR1** | Performance           | The system shall support near-real-time processing of sensor measurements sent every 10 minutes from multiple gateways without noticeable delay. | Performance |
+| **NFR2** | Performance           | All API endpoints shall return responses within 5 seconds under normal load for standard read operations (e.g., retrieving sensor data). | Performance |
+| **NFR3** | Scalability           | The system shall be capable of handling up to 10,000 sensors and millions of measurements per year across multiple networks. | Performance |
 | **[2] Availability and Reliability** | | | |
-| **NFR4** | Availability          | The system shall maintain an availability of at least 99.9% uptime on a yearly basis, excluding scheduled maintenance. | |
-| **NFR5** | Reliability           | The system shall guarantee that no more than six measurements per sensor per year are lost due to processing or transmission failures. | |
-| **NFR6** | Data Integrity        | All incoming sensor data must be reliably stored in the database with transactional consistency to prevent data loss during system faults. | |
+| **NFR4** | Availability          | The system shall maintain an availability of at least 99.9% uptime on a yearly basis, excluding scheduled maintenance. | Availability and Reliability |
+| **NFR5** | Reliability           | The system shall guarantee that no more than six measurements per sensor per year are lost due to processing or transmission failures. | Availability and Reliability |
+| **NFR6** | Data Integrity        | All incoming sensor data must be reliably stored in the database with transactional consistency to prevent data loss during system faults. | Availability and Reliability |
 | **[3] Security Requirements** | | | |
-| **NFR7** | Authentication        | The system shall use JWT (JSON Web Tokens) for stateless authentication of all API requests. | |
-| **NFR8** | Access Control        | The system shall enforce three levels of access: Admin (full), Operator (device and data management), and Viewer (read-only). | |
-| **NFR9** | Data Security         | All HTTP communications between the client and server shall be encrypted using HTTPS. | |
-| **NFR10**| Data Protection       | Passwords shall be securely stored using industry-standard hashing algorithms (e.g., bcrypt, PBKDF2). | |
+| **NFR7** | Authentication        | The system shall use JWT (JSON Web Tokens) for stateless authentication of all API requests. | Security |
+| **NFR8** | Access Control        | The system shall enforce three levels of access: Admin (full), Operator (device and data management), and Viewer (read-only). | Security |
+| **NFR9** | Data Security         | All HTTP communications between the client and server shall be encrypted using HTTPS. | Security |
+| **NFR10**| Data Protection       | Passwords shall be securely stored using industry-standard hashing algorithms (e.g., bcrypt, PBKDF2). | Security |
 | **[4] Usability Requirements** | | | |
-| **NFR11**| API Design            | The web client shall interact with the backend via clearly defined and documented RESTful endpoints. | |
-| **NFR12**| Data Formatting       | All date-time values shall be transmitted and stored using ISO 8601 format in UTC, ensuring clarity and interoperability. | |
-| **NFR13**| User Experience       | Clients shall be able to convert UTC timestamps to their local timezone as needed. | |
+| **NFR11**| API Design            | The web client shall interact with the backend via clearly defined and documented RESTful endpoints. |Usability |
+| **NFR12**| Data Formatting       | All date-time values shall be transmitted and stored using ISO 8601 format in UTC, ensuring clarity and interoperability. |Usability  |
+| **NFR13**| User Experience       | Clients shall be able to convert UTC timestamps to their local timezone as needed. | Usability |
 | **[5] Maintainability and Extensibility** | | | |
-| **NFR14**| System Architecture   | The system shall follow a modular design for managing networks, gateways, and sensors to allow easy updates or extensions in the future. | |
-| **NFR15**| Documentation         | All REST API endpoints shall be described using the OpenAPI Specification (Swagger) to support automated testing and client integration. | |
-| **NFR16**| Deployment            | The system shall be containerizable (e.g., via Docker) to support simplified deployment, rollback, and scalability. | |
+| **NFR14**| System Architecture   | The system shall follow a modular design for managing networks, gateways, and sensors to allow easy updates or extensions in the future. | Maintainability and Extensibility |
+| **NFR15**| Documentation         | All REST API endpoints shall be described using the OpenAPI Specification (Swagger) to support automated testing and client integration. |Maintainability and Extensibility |
+| **NFR16**| Deployment            | The system shall be containerizable (e.g., via Docker) to support simplified deployment, rollback, and scalability. | Maintainability and Extensibility |
 | **[6] Data Management and Consistency** | | | |
-| **NFR17**| Data Integrity        | Create, update, and delete operations on users, networks, gateways, and sensors shall be atomic to avoid partial updates and preserve database integrity. | |
-| **NFR18**| Data Validation       | The system shall validate the uniqueness of MAC addresses (for gateways and sensors) and codes (for networks) to prevent duplicates. | |
+| **NFR17**| Data Integrity        | Create, update, and delete operations on users, networks, gateways, and sensors shall be atomic to avoid partial updates and preserve database integrity. | Data Management and Consistency |
+| **NFR18**| Data Validation       | The system shall validate the uniqueness of MAC addresses (for gateways and sensors) and codes (for networks) to prevent duplicates. | Data Management and Consistency |
 | **[7] Legal and Regulatory Compliance** | | | |
-| **NFR19**| Compliance            | The system shall comply with any applicable data retention policies defined by the commissioning authority or legal regulations. | |
-| **NFR20**| Auditability          | All changes to critical entities (users, networks, gateways, sensors, and measurements) shall be traceable through logs or versioning mechanisms to support audits. | |
+| **NFR19**| Compliance            | The system shall comply with any applicable data retention policies defined by the commissioning authority or legal regulations. | Legal and Regulatory Compliance |
+| **NFR20**| Auditability          | All changes to critical entities (users, networks, gateways, sensors, and measurements) shall be traceable through logs or versioning mechanisms to support audits. | Legal and Regulatory Compliance |
 
 # Use case diagram and use cases
 
