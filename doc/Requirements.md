@@ -395,7 +395,7 @@ GeoControl is a software system designed for monitoring physical and environment
 |-----------------------|----------------------------------|
 | Precondition          | User is authenticated |
 | Postcondition         | Gateway data is modified or displayed |
-| Nominal scenario      | xxx |
+| Nominal scenario      | User logs in and correctly modifies gateway data |
 | Variants              | None |
 | Exceptions            | Invalid gateway MAC Address; Permission denied |
 
@@ -449,7 +449,7 @@ GeoControl is a software system designed for monitoring physical and environment
 |-----------------------|----------------------------------|
 | Precondition          | User is authenticated |
 | Postcondition         | Sensor data is modified or displayed |
-| Nominal scenario      | xxx |
+| Nominal scenario      | User logs in and correctly modifies sensor data |
 | Variants              | None |
 | Exceptions            | Invalid sensor MAC Address; Permission denied |
 
