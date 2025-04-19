@@ -67,30 +67,29 @@ GeoControl is a software system designed for monitoring physical and environment
 # Business Model
 
 - **Value Proposition**: **Smart monitoring** of both hydrogeological parameters of large-scale territories and physical parameters of public/private entities. 
-<br>
 
 - **Key Activities**: 
   - **Installment of sensors** in the target environment, together with the Gateway and related control firmware 
   - **Production** of sensors and gateways 
   - **Development** of gateway’s control firmware and user Dashboard for managing their own network 
   - **Automated data collection** and anomaly detection 
-<br>
+
 - **Key Resources**: 
   - **SW Development program licenses**
   - **Storeroom for hardware** (sensors and gateways) 
   - **Hosting infrastructure** 
-<br>
+
 - **Key Partners**:
   - **HW Suppliers** (gateways + sensors) 
   - Companies which develop the SW used by the development team
   - **HW Installment companies**  
   - **HW Maintenance companies** 
   - **Cloud providers** (hosting, scaling) 
-<br>
+
 - **Customer Segments**:
   -  **Regions/districts** who want to monitor their environmental parameters in real-time 
   - **Public/private companies** who want to monitor the company’s parameters 
-<br>
+
 - **Channels**:
   - **GeoControl website**:
     - *Evaluation*: Show off features of GeoControl solution 
@@ -100,14 +99,14 @@ GeoControl is a software system designed for monitoring physical and environment
   - **Social media accounts** (*Awareness*) 
   - **Online marketing** (*Awareness*) 
   - **GeoControl HQs** (*HW Delivery*) 
-<br>
+
 - **Customer Relationships**:
   - **Customer support email** to ask questions and get hands-on support on hw maintenance and installment from certified technicians 
   - **Website FAQ page** 
   - **Weekly tips-and-tricks** or “did you know…” emails sent to customers 
   - **GeoControl social media accounts** 
   - **Dedicated technical support** for enterprise clients 
-<br>
+
 - **Cost Structure**: 
   - **HW Installment performance cost** 
   - Cost of **sw development** 
@@ -117,7 +116,7 @@ GeoControl is a software system designed for monitoring physical and environment
   - **Online ads**
   - **Social media accounts managing** 
   - **Development team salary** 
-<br>
+
 - **Revenue Streams**:
   - **HW Installment & Upgrading**  
   - **Subscription payments** to use the service  
@@ -165,14 +164,14 @@ GeoControl is a software system designed for monitoring physical and environment
     - Create new users with different access levels based on their role, or delete and update existing users 
     - Retrieve the list of all users or a specific user
     - All of Operator’s capabilities 
-<br>
+
 - **Persona 2**
   - **Role**: *Operator*
   - **Goals**:
     - Manage (add/change/remove) networks, gateways and sensors 
     - Manually insert measurements for a sensor 
     - All of Viewer’s capabilities 
-<br>
+
 - **Persona 3**
   - **Role**: *Viewer*
   - **Goals**:
