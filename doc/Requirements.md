@@ -597,7 +597,7 @@ GeoControl is a software system designed for monitoring physical and environment
 
 # System Design
 
- << TODO: >>
+![SystemDesign](./images/GeoControl%20System%20Design.png)
 
 
 # Deployment Diagram
