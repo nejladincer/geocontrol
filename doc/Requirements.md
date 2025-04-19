@@ -43,12 +43,19 @@ Version: V1 - description of Geocontrol as described in the swagger
       - [Scenario 4.3: Retrieve Specific Gateway](#scenario-43-retrieve-specific-gateway)
       - [Scenario 4.4: Update Gateway](#scenario-44-update-gateway)
       - [Scenario 4.5: Delete Gateway](#scenario-45-delete-gateway)
-    - [Use case 4: Manage Sensors](#use-case-4-manage-sensors)
-      - [Scenario 4.1: Create sensor](#scenario-41-create-sensor)
-      - [Scenario 4.2: Retreive all sensors](#scenario-42-retreive-all-sensors)
-      - [Scenario 4.3: Retrieve Specific sensor](#scenario-43-retrieve-specific-sensor)
-      - [Scenario 4.4: Update sensor](#scenario-44-update-sensor)
-      - [Scenario 4.5: Delete sensor](#scenario-45-delete-sensor)
+    - [Use case 5: Manage Sensors](#use-case-5-manage-sensors)
+      - [Scenario 5.1: Create sensor](#scenario-51-create-sensor)
+      - [Scenario 5.2: Retreive all sensors](#scenario-52-retreive-all-sensors)
+      - [Scenario 5.3: Retrieve Specific sensor](#scenario-53-retrieve-specific-sensor)
+      - [Scenario 5.4: Update sensor](#scenario-54-update-sensor)
+      - [Scenario 5.5: Delete sensor](#scenario-55-delete-sensor)
+    - [Use case 6: Insert Measurements](#use-case-6-insert-measurements)
+      - [Scenario 6.1: Insert a measurement](#scenario-61-insert-a-measurement)
+    - [Use case 7: View Measurements](#use-case-7-view-measurements)
+      - [Scenario 7.1: View measurement by sensor](#scenario-71-view-measurement-by-sensor)
+      - [Scenario 7.2: View measurement by network/sensor group](#scenario-72-view-measurement-by-networksensor-group)
+    - [Use case 8: View Statistics](#use-case-8-view-statistics)
+    - [Use case 9: Detect Outlier measurements](#use-case-9-detect-outlier-measurements)
 - [Glossary](#glossary)
 - [System Design](#system-design)
 - [Deployment Diagram](#deployment-diagram)
@@ -437,7 +444,7 @@ GeoControl is a software system designed for monitoring physical and environment
 | Step 2        | System deletes it    |
 
 
-### Use case 4: Manage Sensors 
+### Use case 5: Manage Sensors 
 
 | Actors involved       | Administrator, Operator, Viewer (read-only) |
 |-----------------------|----------------------------------|
@@ -447,8 +454,8 @@ GeoControl is a software system designed for monitoring physical and environment
 | Variants              | None |
 | Exceptions            | Invalid sensor MAC Address; Permission denied |
 
-#### Scenario 4.1: Create sensor
-| Scenario 4.1 |                |
+#### Scenario 5.1: Create sensor
+| Scenario 5.1 |                |
 |--------------|----------------|
 | Precondition  | User is authenticated |
 | Postcondition | Sensor is created |
@@ -457,24 +464,24 @@ GeoControl is a software system designed for monitoring physical and environment
 | Step 3        | System assigns unique MAC Address to sensor |
 | Step 4        | System registers sensor  |
 
-#### Scenario 4.2: Retreive all sensors
-| Scenario 4.2 |                |
+#### Scenario 5.2: Retreive all sensors
+| Scenario 5.2 |                |
 |--------------|----------------|
 | Precondition  | User is authenticated |
 | Postcondition | List of sensors is displayed |
 | Step 1        | User requests list of sensors   |
 | Step 2        | System returns all sensors   |
 
-#### Scenario 4.3: Retrieve Specific sensor
-| Scenario 4.3 |                |
+#### Scenario 5.3: Retrieve Specific sensor
+| Scenario 5.3 |                |
 |--------------|----------------|
 | Precondition  | User is authenticated |
 | Postcondition | The requested sensor is displayed |
 | Step 1        | User provides sensor MAC Address |
 | Step 2        | System shows sensor details |
 
-#### Scenario 4.4: Update sensor 
-| Scenario 4.4 |                |
+#### Scenario 5.4: Update sensor 
+| Scenario 5.4 |                |
 |--------------|----------------|
 | Precondition  | User is authenticated |
 | Postcondition | The sensor gets updated |
@@ -482,8 +489,8 @@ GeoControl is a software system designed for monitoring physical and environment
 | Step 2        | User makes changes    |
 | Step 3        | System updates sensor     |
 
-#### Scenario 4.5: Delete sensor 
-| Scenario 4.5 |                |
+#### Scenario 5.5: Delete sensor 
+| Scenario 5.5 |                |
 |--------------|----------------|
 | Precondition  | User is authenticated |
 | Postcondition | The sensor gets deleted |
@@ -491,18 +498,109 @@ GeoControl is a software system designed for monitoring physical and environment
 | Step 2        | System deletes it    |
 
 
+### Use case 6: Insert Measurements
+
+| Actors involved       | Administrator, Operator |
+|-----------------------|----------------------------------|
+| Precondition          | Sensor and gateway exist and are active, User is authenticated |
+| Postcondition         | Measurement stored in UTC format |
+| Nominal scenario      | User (Admin/Operator) correctly inserts sensor measurements |
+| Variants              | None |
+| Exceptions            | Invalid sensor ID; Invalid Time Stamps |
+
+#### Scenario 6.1: Insert a measurement
+| Scenario 6.1 |                |
+|--------------|----------------|
+| Precondition  | Sensor and gateway exist and are active, User is authenticated |
+| Postcondition | Measurement stored in UTC format |
+| Step 1        | User (Admin/Operator) selects sensor   |
+| Step 2        | Enters measurement value and local timestamp  |
+| Step 3        | System converts timestamp to UTC  |
+| Step 4        | System stores measurement   |
+
+### Use case 7: View Measurements
+
+| Actors involved       | Administrator, Operator, Viewer |
+|-----------------------|----------------------------------|
+| Precondition          | User is authenticated |
+| Postcondition         | Measurement is displayed |
+| Nominal scenario      | User requests measurements and they get displayed correctly |
+| Variants              | None |
+| Exceptions            | No measurements found |
+
+#### Scenario 7.1: View measurement by sensor
+| Scenario 7.1 |                |
+|--------------|----------------|
+| Precondition          | User is authenticated |
+| Postcondition         | Measurement is displayed |
+| Step 1                | User specifies sensor ID |
+| Step 2                | User requests list of measurements of the sensor |
+| Step 3                | System displays measurement  |
+
+#### Scenario 7.2: View measurement by network/sensor group
+| Scenario 7.2 |                |
+|--------------|----------------|
+| Precondition          | User is authenticated |
+| Postcondition         | Measurement is displayed |
+| Step 1                | User specifies Network/Sensor group ID |
+| Step 2                | User requests list of measurements of group |
+| Step 3                | System displays group measurements |
+
+
+### Use case 8: View Statistics
+
+| Actors involved       | Administrator, Operator, Viewer |
+|-----------------------|----------------------------------|
+| Precondition          | User is authenticated |
+| Postcondition         | Stats are computed and displayed |
+| Nominal scenario      | User selects sensors and time range, the system computes statistics, and then displays them |
+| Variants              | None |
+| Exceptions            | No data exists |
+
+
+### Use case 9: Detect Outlier measurements
+
+| Actors involved       | Administrator, Operator, Viewer |
+|-----------------------|----------------------------------|
+| Precondition          | Statistical thresholds are computed  |
+| Postcondition         | Outlier measurements are retrieved and flagged |
+| Nominal scenario      | User requests outliers for sensor/network, system compares each value against thresholds and returns only flagged measurements |
+| Variants              | None |
+| Exceptions            | No measurements found |
+
+
 # Glossary
-
-\<use UML class diagram to define important terms, or concepts in the domain of the application, and their relationships>
-
-\<concepts must be used consistently all over the document, ex in use cases, requirements etc>
+| Term                     | Description | 
+|--------------------------|-------------| 
+| **Network**              | A logical entity that groups multiple gateways |
+| **Gateway**              | A physical device that collects data from connected sensors via serial interface and sends it to the GeoControl system through a network connection |
+| **Sensor**               | A physical device that measures the physical quantity (temperature, inclination, etc.) every 10 minutes and transmits the data to the gateway |
+| **Dashboard**            | Software deployed on GeoControl servers which allows users (admins, operators and viewers) to manage their network |
+| **Firmware**             | Software embedded in gateways and sensors that enables them to function |
+| **Admin**                | A user with administrative privileges, with full access to all system functionalities |
+| **Operator**             | A user with permissions to manage networks, gateways, and sensors, but with no access to user-related functionalities |
+| **Viewer**               | A user with read-only access to networks, gateways, sensors and measurements |
+| **Hosting infrastructure** | Hardware infrastructure provided by an external company to aid in building a company's own infrastructure |
+| **Payment**              | Exchange of money between two parties |
+| **Cloud providers**       | Providers of cloud services used to host and scale the GeoControl infrastructure |
+| **Customer support email** | The official email address used to provide technical support to end users |
+| **Subscription**         | The usage plan of the GeoControl system, gained through periodical payment |
+| **FAQ page**             | A frequently asked questions page (on the website) that provides quick answers to common user queries |
+| **Enterprise customization** | Customizing website according to enterprise customers' special needs |
+| **Public and private entities** | Organizations, both public (regional authorities) and private (companies), that use GeoControl for environmental monitoring |
+| **Industrial enterprise** | Real-world companies or organizations that specialize in monitoring air quality, water levels, pollution etc. Additionally, industrial IOT companies and companies that develop urban-scale monitoring systems (air, noise, crowd, energy, traffic) |
+| **User role**            | The access level of a user in the system (admin, operator, viewer) |
+| **User capabilities**    | The actions a user can perform in the system, defined by their assigned role |
+| **Sensor measurements**  | Data collected periodically by the sensors |
+| **HW**                   | Hardware |
+| **SW**                   | Software |
+| **GC**                   | GeoControl |        
 
 # System Design
 
-\<describe here system design>
+ << TODO: >>
 
-\<must be consistent with Context diagram>
 
 # Deployment Diagram
 
-\<describe here deployment diagram >
+![DeploymentDiagram](./images/GeoControlDeploymentDiagram.png)
