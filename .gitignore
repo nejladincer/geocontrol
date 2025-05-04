@@ -6,4 +6,9 @@ data
 database.sqlite
 openapitools.json
 logs
+<<<<<<< HEAD
 coverage
+src/config/config.ts
+=======
+coverage
+>>>>>>> parent of 8bc35d0 (excluded configs folder sync)
