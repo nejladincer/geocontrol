@@ -7,4 +7,4 @@ database.sqlite
 openapitools.json
 logs
 coverage
-src/config/*
+src/config/config.ts
