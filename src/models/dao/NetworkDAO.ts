@@ -1,5 +1,5 @@
-import { Entity, PrimaryColumn, Column } from "typeorm";
-//import { GatewayDAO } from "./GatewayDAO";
+import { Entity, PrimaryColumn, Column, OneToMany } from "typeorm";
+import { GatewayDAO } from "./GatewayDAO";
 
 @Entity("networks")
 export class NetworkDAO {
@@ -13,6 +13,6 @@ export class NetworkDAO {
   description: string;
 
   //added this for gateway relation in the future
-  //@OneToMany(() => GatewayDAO, gateway => gateway.network)
-  //gateways: GatewayDAO[];
+  @OneToMany(() => GatewayDAO, gateway => gateway.network)
+  gateways: GatewayDAO[];
 } 
