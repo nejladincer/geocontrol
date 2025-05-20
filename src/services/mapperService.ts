@@ -78,17 +78,17 @@ function removeNullAttributes<T>(dto: T): Partial<T> {
 export function createGatewayDTO(
   macAddress: string,
   name: string,
-  description: string,
-  sensors: SensorDAO[]
+  description: string
+  //sensors: SensorDAO[]
 ): GatewayDTO {
   return removeNullAttributes({
     macAddress,
     name,
     description,
-    sensors
+    //sensors
   }) as GatewayDTO;
 }
 
 export function mapGatewayDAOToDTO(gatewayDAO: GatewayDAO): GatewayDTO {
-  return createGatewayDTO(gatewayDAO.macAddress, gatewayDAO.name, gatewayDAO.description, gatewayDAO.sensors);
+  return createGatewayDTO(gatewayDAO.macAddress, gatewayDAO.name, gatewayDAO.description); //gatewayDAO.sensors);
 }

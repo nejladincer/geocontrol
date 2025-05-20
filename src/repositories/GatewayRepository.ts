@@ -3,7 +3,7 @@ import { Repository } from "typeorm";
 import { GatewayDAO } from "@dao/GatewayDAO";
 import { findOrThrowNotFound, throwConflictIfFound } from "@utils";
 import { NetworkDAO } from "@dao/NetworkDAO";
-import { SensorDAO } from "@dao/SensorDAO";
+//import { SensorDAO } from "@dao/SensorDAO"; //TODO: SensorDAO will be created
 import { ConflictError } from "@models/errors/ConflictError";
 
 export class GatewayRepository {
@@ -14,11 +14,20 @@ export class GatewayRepository {
   }
 
   async getAllGatewaysInNetwork(code: string): Promise<GatewayDAO[]> {
-    return findOrThrowNotFound(
-      await this.repo.find({ where: { network: { code: code } } }),
-      () => true,
-      `Network with code '${ code }' not found`
-    );
+    // First check if network exists
+    const network = await AppDataSource.getRepository(NetworkDAO).findOne({
+      where: { code }
+    });
+
+    if (!network) {
+      throw new Error(`Network with code '${code}' not found`);
+    }
+
+    // Get all gateways for this network with relations loaded
+    return this.repo.find({
+      where: { network: { code } },
+      relations: ['network']
+    });
   }
 
   async getGatewayByMacAddress(macAddress: string, networkCode: string): Promise<GatewayDAO> {
@@ -33,7 +42,7 @@ export class GatewayRepository {
     macAddress: string,
     name: string,
     description: string,
-    sensors: SensorDAO[],
+    //sensors: SensorDAO[],
     network: NetworkDAO
   ): Promise<GatewayDAO> {
     throwConflictIfFound(
@@ -46,7 +55,7 @@ export class GatewayRepository {
       macAddress: macAddress,
       name: name,
       description: description,
-      sensors: sensors,
+      //sensors: sensors,
       network: network
     });
   }
