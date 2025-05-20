@@ -11,11 +11,10 @@ import {
 import { authenticateUser } from "@middlewares/authMiddleware";
 import { GatewayFromJSON } from "@models/dto/Gateway";
 
-
 const router = Router({ mergeParams: true });
 
 // Get all gateways (Any authenticated user)
-router.get("/:networkCode/gateways", 
+router.get("/", 
            authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]), 
            async (req, res, next) => {
   try {
@@ -23,32 +22,32 @@ router.get("/:networkCode/gateways",
     res.status(200).json(gateways);
   } catch (error) {
     next(error);
-
+  }
 });
 
 // Create a new gateway (Admin & Operator)
-router.post("/:networkCode/gateways", // TODO: "/:networkCode" ?
+router.post("/",
             authenticateUser([UserType.Admin, UserType.Operator]), 
             async (req, res, next) => {
-try {
-  await createGateway(GatewayFromJSON(req.body));
-  res.status(201).send();
-} catch (error) {
-  next(error);
-}
+  try {
+    await createGateway(GatewayFromJSON(req.body), req.params.networkCode);
+    res.status(201).send();
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.status).json({ message: error.message });
+    } else {
+      next(error);
+    }
+  }
 });
 
 // Get a specific gateway (Any authenticated user)
-router.get("/:networkCode/gateways/:macAddress",
+router.get("/:macAddress",
           authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
           async (req, res, next) => {
     try {
       const { networkCode, macAddress } = req.params;
-
-      // Get the gateway with the given macAddress in the specified network 
-      const gateway = await getGateway(networkCode, macAddress);
-
-
+      const gateway = await getGateway(macAddress, networkCode);
       res.status(200).json(gateway);
     } catch (error) {
       next(error);
@@ -56,10 +55,9 @@ router.get("/:networkCode/gateways/:macAddress",
   }
 );
 
-
 // Update a gateway (Admin & Operator)
 router.patch(
-  "/:networkCode/gateways/:macAddress",
+  "/:macAddress",
   authenticateUser([UserType.Admin, UserType.Operator]),
   async (req, res, next) => {
     try {
@@ -73,7 +71,7 @@ router.patch(
 
 // Delete a gateway (Admin & Operator)
 router.delete(
-  "/:networkCode/gateways/:macAddress",
+  "/:macAddress",
   authenticateUser([UserType.Admin, UserType.Operator]),
   async (req, res, next) => {
     try {

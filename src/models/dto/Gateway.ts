@@ -45,6 +45,12 @@ export interface Gateway {
      */
     description?: string;
     /**
+     * Network code that this gateway belongs to
+     * @type {string}
+     * @memberof Gateway
+     */
+    networkCode?: string;
+    /**
      * 
      * @type {Array<Sensor>}
      * @memberof Gateway
@@ -72,6 +78,7 @@ export function GatewayFromJSONTyped(json: any, ignoreDiscriminator: boolean): G
         'macAddress': json['macAddress'] == null ? undefined : json['macAddress'],
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'networkCode': json['networkCode'] == null ? undefined : json['networkCode'],
         'sensors': json['sensors'] == null ? undefined : ((json['sensors'] as Array<any>).map(SensorFromJSON)),
     };
 }
@@ -90,6 +97,7 @@ export function GatewayToJSONTyped(value?: Gateway | null, ignoreDiscriminator: 
         'macAddress': value['macAddress'],
         'name': value['name'],
         'description': value['description'],
+        'networkCode': value['networkCode'],
         'sensors': value['sensors'] == null ? undefined : ((value['sensors'] as Array<any>).map(SensorToJSON)),
     };
 }
