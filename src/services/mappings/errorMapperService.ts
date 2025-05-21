@@ -8,6 +8,9 @@ import { ErrorDTO } from "@models/dto/ErrorDTO";
 import { UserType } from "@models/UserType";
 import { Gateway as GatewayDTO } from "@models/dto/Gateway";
 import { removeNullAttributes } from "@services/mappings/utilsMapperService";
+import { createUserDTO } from "./userMapperService";
+import { Sensor as SensorDTO } from "@dto/Sensor";
+import { SensorDAO } from "@models/dao/SensorDAO";
 
 /* ERROR DTO */
 export function createErrorDTO(
@@ -21,4 +24,20 @@ export function createErrorDTO(
     message
   }) as ErrorDTO;
 }
+
+export function mapUserDAOToDTO(userDAO: UserDAO): UserDTO {
+  return createUserDTO(userDAO.username, userDAO.type);
+}
+
+/** Maps SensorDAO to SensorDTO */
+export function mapSensorDAOToDTO(sensorDAO: SensorDAO): SensorDTO {
+  return {
+    macAddress: sensorDAO.macAddress,
+    name: sensorDAO.name,
+    description: sensorDAO.description,
+    variable: sensorDAO.variable,
+    unit: sensorDAO.unit
+  };
+}
+
 
