@@ -1,31 +1,98 @@
 import AppError from "@models/errors/AppError";
-import { Router } from "express";
+import { Router, Request } from "express";
+import { Sensor } from "@dto/Sensor";
+import {
+  getAllSensors,
+  getSensor,
+  createSensor,
+  updateSensor,
+  deleteSensor
+} from "@controllers/SensorController";
+import { authenticateUser } from "@middlewares/authMiddleware";
+import { UserType } from "@models/UserType";
 
 const router = Router({ mergeParams: true });
 
-// Get all sensors (Any authenticated user)
-router.get("", (req, res, next) => {
-  throw new AppError("Method not implemented", 500);
-});
+interface AuthenticatedRequest extends Request {
+  user?: {
+    type: UserType;
+  };
+}
 
-// Create a new sensor (Admin & Operator)
-router.post("", (req, res, next) => {
-  throw new AppError("Method not implemented", 500);
-});
+// GET all sensors in a gateway (any authenticated user)
+router.get(
+  "/",
+  authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
+  async (req, res, next) => {
+    try {
+      const { networkCode, gatewayMac } = req.params;
+      const sensors = await getAllSensors(networkCode, gatewayMac);
+      res.status(200).json(sensors);
+    } catch (error) {
+      next(error instanceof AppError ? error : new AppError("Internal server error", 500));
+    }
+  }
+);
 
-// Get a specific sensor (Any authenticated user)
-router.get("/:sensorMac", (req, res, next) => {
-  throw new AppError("Method not implemented", 500);
-});
+// GET specific sensor (any authenticated user)
+router.get(
+  "/:sensorMac",
+  authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
+  async (req, res, next) => {
+    try {
+      const { networkCode, gatewayMac, sensorMac } = req.params;
+      const sensor = await getSensor(sensorMac, gatewayMac, networkCode);
+      res.status(200).json(sensor);
+    } catch (error) {
+      next(error instanceof AppError ? error : new AppError("Internal server error", 500));
+    }
+  }
+);
 
-// Update a sensor (Admin & Operator)
-router.patch("/:sensorMac", (req, res, next) => {
-  throw new AppError("Method not implemented", 500);
-});
+// POST new sensor (Admin & Operator)
+router.post(
+  "/",
+  authenticateUser([UserType.Admin, UserType.Operator]),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const sensorDto = req.body as Sensor;
+      const { networkCode, gatewayMac } = req.params;
+      await createSensor(sensorDto, gatewayMac, networkCode);
+      res.status(201).send();
+    } catch (error) {
+      next(error instanceof AppError ? error : new AppError("Internal server error", 500));
+    }
+  }
+);
 
-// Delete a sensor (Admin & Operator)
-router.delete("/:sensorMac", (req, res, next) => {
-  throw new AppError("Method not implemented", 500);
-});
+// PATCH existing sensor (Admin & Operator)
+router.patch(
+  "/:sensorMac",
+  authenticateUser([UserType.Admin, UserType.Operator]),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { networkCode, gatewayMac, sensorMac } = req.params;
+      await updateSensor(sensorMac, gatewayMac, networkCode, req.body);
+      res.status(204).send();
+    } catch (error) {
+      next(error instanceof AppError ? error : new AppError("Internal server error", 500));
+    }
+  }
+);
+
+// DELETE sensor (Admin & Operator)
+router.delete(
+  "/:sensorMac",
+  authenticateUser([UserType.Admin, UserType.Operator]),
+  async (req, res, next) => {
+    try {
+      const { networkCode, gatewayMac, sensorMac } = req.params;
+      await deleteSensor(sensorMac, gatewayMac, networkCode);
+      res.status(204).send();
+    } catch (error) {
+      next(error instanceof AppError ? error : new AppError("Internal server error", 500));
+    }
+  }
+);
 
 export default router;
