@@ -29,7 +29,7 @@ npm start
 
 By default, the server runs on
 
-**http://localhost:5000**.
+**http://localhost:5005**.
 
 #### Development Mode (Hot Reloading)
 
@@ -100,7 +100,7 @@ doc/swagger_v1.yaml
 
 Once the application is running, the **Swagger UI** is available at:
 
-**http://localhost:5000/api/v1/doc**
+**http://localhost:5005/api/v1/doc**
 
 The Swagger documentation provides a complete definition and description of the system, including object schemas, detailed endpoint specifications with input and output parameters, error definitions, and a brief functional overview of each API operation. It serves as the authoritative reference for understanding how the system is designed to function.
 
@@ -140,7 +140,7 @@ The project follows a **modular architecture**, ensuring maintainability, separa
   **Run the container after building the image:**
 
   ```bash
-  docker run -d --name geocontrol-backend -p 5000:5000 geocontrol-backend
+  docker run -d --name geocontrol-backend -p 5005:5005 geocontrol-backend
   ```
 
 - **`/db`**
