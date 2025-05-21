@@ -1,6 +1,6 @@
 import { User as UserDTO } from "@dto/User";
 import { UserRepository } from "@repositories/UserRepository";
-import { mapUserDAOToDTO } from "@services/mapperService";
+import { mapUserDAOToDTO } from "@services/mappings/errorMapperService";
 
 export async function getAllUsers(): Promise<UserDTO[]> {
   const userRepo = new UserRepository();

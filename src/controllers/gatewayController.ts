@@ -1,7 +1,7 @@
 import { Gateway as GatewayDTO } from "@dto/Gateway";
 import { GatewayRepository } from "@repositories/GatewayRepository";
 import { NetworkRepository } from "@repositories/NetworkRepository";
-import { mapGatewayDAOToDTO } from "@services/mapperService";
+import { mapGatewayDAOToDTO } from "@services/mappings/errorMapperService";
 import { AppDataSource } from "@database";
 import { NetworkDAO } from "@dao/NetworkDAO";
 import AppError from "@models/errors/AppError";
