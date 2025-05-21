@@ -96,4 +96,3 @@ router.delete(
 );
 
 export default router;
-z
