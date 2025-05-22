@@ -23,10 +23,8 @@ export class GatewayRepository {
       throw new Error(`Network with code '${code}' not found`);
     }
 
-    // Get all gateways for this network with relations loaded
     return this.repo.find({
       where: { network: { code } },
-      relations: ['network']
     });
   }
 
@@ -43,7 +41,7 @@ export class GatewayRepository {
     name: string,
     description: string,
     //sensors: SensorDAO[],
-    network: NetworkDAO
+    networkCode: string
   ): Promise<GatewayDAO> {
     throwConflictIfFound(
       await this.repo.find({ where: { macAddress } }),
@@ -56,7 +54,7 @@ export class GatewayRepository {
       name: name,
       description: description,
       //sensors: sensors,
-      network: network
+      networkCode: networkCode
     });
   }
 
