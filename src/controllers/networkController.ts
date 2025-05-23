@@ -1,6 +1,6 @@
 import { Network as NetworkDTO } from "@dto/Network";
 import { NetworkRepository } from "@repositories/NetworkRepository";
-import { mapNetworkDAOToDTO } from "@services/mappings/errorMapperService";
+import { mapNetworkDAOToDTO } from "@services/mappings/networkMapperService";
 import AppError from "@models/errors/AppError";
 
 export async function getAllNetworks(): Promise<NetworkDTO[]> {

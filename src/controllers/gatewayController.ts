@@ -1,7 +1,7 @@
 import { Gateway as GatewayDTO } from "@dto/Gateway";
 import { GatewayRepository } from "@repositories/GatewayRepository";
 import { NetworkRepository } from "@repositories/NetworkRepository";
-import { mapGatewayDAOToDTO } from "@services/mappings/errorMapperService";
+import { mapGatewayDAOToDTO } from "@services/mappings/gatewayMapperService";
 import { AppDataSource } from "@database";
 import { NetworkDAO } from "@dao/NetworkDAO";
 import AppError from "@models/errors/AppError";
@@ -23,10 +23,13 @@ export async function createGateway(gatewayDto: GatewayDTO, networkCode: string)
   
   try {
     const network = await networkRepo.getNetworkByCode(networkCode);
-    await gatewayRepo.createGateway(gatewayDto.macAddress, gatewayDto.name, gatewayDto.description, network);
+    await gatewayRepo.createGateway(gatewayDto.macAddress, gatewayDto.name, gatewayDto.description, network.code);
   } catch (error) {
     if (error instanceof AppError && error.message.includes('not found')) {
       throw new AppError(`Network with code '${networkCode}' not found`, 404);
+    }
+    if (error instanceof AppError && error.message.includes('already exists')) {
+      throw new AppError("Gateway with mac address '${gatewayDto.macAddress}' already exists", 409);
     }
     throw new AppError("Failed to create gateway", 500);
   }

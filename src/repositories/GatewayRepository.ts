@@ -24,13 +24,13 @@ export class GatewayRepository {
     }
 
     return this.repo.find({
-      where: { network: { code } },
+      where: { networkCode: code },
     });
   }
 
   async getGatewayByMacAddress(macAddress: string, networkCode: string): Promise<GatewayDAO> {
     return findOrThrowNotFound(
-      await this.repo.find({ where: { macAddress, network: { code: networkCode } } }),
+      await this.repo.find({ where: { macAddress, networkCode } }),
       () => true,
       `Gateway with macAddress '${macAddress}' not found`
     );
