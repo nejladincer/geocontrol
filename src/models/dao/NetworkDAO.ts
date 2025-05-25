@@ -13,6 +13,6 @@ export class NetworkDAO {
   description: string;
 
   //added this for gateway relation in the future
-  @OneToMany(() => GatewayDAO, gateway => gateway.network)
+  @OneToMany(() => GatewayDAO, gateway => gateway.networkCode)
   gateways: GatewayDAO[];
 } 

@@ -14,17 +14,19 @@ import { removeNullAttributes } from "@services/mappings/utilsMapperService";
 export function createGatewayDTO(
   macAddress: string,
   name: string,
-  description: string
+  description: string,
+  networkCode: string
   //sensors: SensorDAO[]
 ): GatewayDTO {
   return removeNullAttributes({
     macAddress,
     name,
     description,
+    networkCode
     //sensors
   }) as GatewayDTO;
 }
 
 export function mapGatewayDAOToDTO(gatewayDAO: GatewayDAO): GatewayDTO {
-  return createGatewayDTO(gatewayDAO.macAddress, gatewayDAO.name, gatewayDAO.description); //gatewayDAO.sensors);
+  return createGatewayDTO(gatewayDAO.macAddress, gatewayDAO.name, gatewayDAO.description, gatewayDAO.networkCode); //gatewayDAO.sensors);
 }
