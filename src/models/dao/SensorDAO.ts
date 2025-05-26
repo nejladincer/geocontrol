@@ -18,7 +18,7 @@ export class SensorDAO {
   @Column({ nullable: false })
   unit: string;
 
-  //@ManyToOne(() => GatewayDAO, gateway => gateway.sensors, { onDelete: "CASCADE" })
+  @ManyToOne(() => GatewayDAO, gateway => gateway.sensors, { onDelete: "CASCADE" })
   @JoinColumn({ name: "gatewayMac" })
   gateway: GatewayDAO;
 }
