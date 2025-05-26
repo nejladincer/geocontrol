@@ -219,7 +219,7 @@ describe("GatewayRoutes integration", () => {
       description: "Updated description"
     };
 
-    it("should update network (admin)", async () => {
+    it("should update gateway (admin)", async () => {
       (authService.processToken as jest.Mock).mockResolvedValue(undefined);
       (gatewayController.updateGateway as jest.Mock).mockResolvedValue(undefined);
 
@@ -260,7 +260,7 @@ describe("GatewayRoutes integration", () => {
 
     it("should return 404 for non-existent network", async () => {
       (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (networkController.updateNetwork as jest.Mock).mockImplementation(() => {
+      (gatewayController.updateGateway as jest.Mock).mockImplementation(() => {
         throw new NotFoundError("Network not found");
       });
 
@@ -302,7 +302,7 @@ describe("GatewayRoutes integration", () => {
       expect(gatewayController.deleteGateway).toHaveBeenCalledWith("test-mac-address", "test-network");
     });
 
-    it("should delete network (operator)", async () => {
+    it("should delete gateway (operator)", async () => {
       (authService.processToken as jest.Mock).mockResolvedValue(undefined);
       (gatewayController.deleteGateway as jest.Mock).mockResolvedValue(undefined);
 
