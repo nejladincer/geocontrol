@@ -12,7 +12,7 @@ export class NetworkDAO {
   @Column({ nullable: false })
   description: string;
 
-  //added this for gateway relation in the future
+  // 1 Network : N Gateways
   @OneToMany(() => GatewayDAO, gateway => gateway.network)
   gateways: GatewayDAO[];
 } 

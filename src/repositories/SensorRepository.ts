@@ -2,7 +2,7 @@ import { AppDataSource } from "@database";
 import { Repository } from "typeorm";
 import { SensorDAO } from "@dao/SensorDAO";
 import { GatewayDAO } from "@dao/GatewayDAO";
-import { findOrThrowNotFound, throwConflictIfFound } from "@utils";
+import { findOrThrowNotFound, throwConflictIfFound } from "utils/utils";
 
 export class SensorRepository {
   private repo: Repository<SensorDAO>;
@@ -11,6 +11,22 @@ export class SensorRepository {
   constructor() {
     this.repo = AppDataSource.getRepository(SensorDAO);
     this.gatewayRepo = AppDataSource.getRepository(GatewayDAO);
+  }
+
+
+  async getAllSensorsInNetwork(networkCode: string): Promise<SensorDAO[]> {
+    // SELECT S.*
+    // FROM (sensors AS S) 
+    // INNER JOIN (gateways AS G) ON S.gateway = G.sensors
+    // INNER JOIN (networks AS N) ON G.network = N.gateways
+    // WHERE N.code = networkCode
+
+    return this.repo
+    .createQueryBuilder("s")
+    .innerJoinAndSelect("s.gateway", "g")
+    .innerJoinAndSelect("g.network", "n")
+    .where("n.code = :networkCode", { networkCode })
+    .getMany();
   }
 
   async getAllSensorsInGateway(gatewayMac: string): Promise<SensorDAO[]> {

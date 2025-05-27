@@ -1,6 +1,7 @@
-import { Entity, PrimaryColumn, Column, OneToMany, ManyToOne } from "typeorm";
+import { Entity, PrimaryColumn, Column, OneToMany, ManyToOne, JoinColumn } from "typeorm";
 //import { SensorDAO } from "./SensorDAO"; //TODO: SensorDAO will be created
 import { NetworkDAO } from "./NetworkDAO"; // Se il gateway appartiene a un network
+import { SensorDAO } from "./SensorDAO";
 
 @Entity("gateways")
 export class GatewayDAO {
@@ -13,9 +14,12 @@ export class GatewayDAO {
   @Column({ nullable: false })
   description: string;
 
-  /*@OneToMany(() => SensorDAO, (sensor) => sensor.gateway)
-  sensors: SensorDAO[];
-*/
-  @ManyToOne(() => NetworkDAO, (network) => network.gateways)
+  // N Gateways : 1 Network
+  @ManyToOne(() => NetworkDAO, (network) => network.gateways, { cascade: true })
+  @JoinColumn({ name: "networkCode" })
   network: NetworkDAO;
+
+  // 1 Gateway : N Sensors
+  @OneToMany(() => SensorDAO, (sensor) => sensor.gateway)
+  sensors: SensorDAO[];
 }
