@@ -11,6 +11,7 @@ import { ConflictError } from "@models/errors/ConflictError";
 
 jest.mock("@services/authService");
 jest.mock("@controllers/gatewayController");
+jest.unmock("@middlewares/authMiddleware");
 
 describe("GatewayRoutes integration", () => {
   const token = "Bearer faketoken";
@@ -33,7 +34,7 @@ describe("GatewayRoutes integration", () => {
       (gatewayController.getAllGateways as jest.Mock).mockResolvedValue(mockGateways);
 
       const response = await request(app)
-        .get("/api/v1/networks/:networkCode/gateways")
+        .get("/api/v1/networks/test-network/gateways")
         .set("Authorization", adminToken);
 
       expect(response.status).toBe(200);
@@ -46,7 +47,7 @@ describe("GatewayRoutes integration", () => {
       (gatewayController.getAllGateways as jest.Mock).mockResolvedValue(mockGateways);
 
       const response = await request(app)
-        .get("/api/v1/networks/:networkCode/gateways")
+        .get("/api/v1/networks/test-network/gateways")
         .set("Authorization", operatorToken);
 
       expect(response.status).toBe(200);
@@ -58,7 +59,7 @@ describe("GatewayRoutes integration", () => {
       (gatewayController.getAllGateways as jest.Mock).mockResolvedValue(mockGateways);
 
       const response = await request(app)
-        .get("/api/v1/networks/:networkCode/gateways")
+        .get("/api/v1/networks/test-network/gateways")
         .set("Authorization", viewerToken);
 
       expect(response.status).toBe(200);
@@ -66,7 +67,7 @@ describe("GatewayRoutes integration", () => {
     });
 
     it("should return 401 without auth token", async () => {
-      const response = await request(app).get("/api/v1/networks/:networkCode/gateways");
+      const response = await request(app).get("/api/v1/networks/test-network/gateways");
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
     });
@@ -78,7 +79,7 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .get("/api/v1/networks/non-existent")
+        .get("/api/v1/networks/non-existent/gateways")
         .set("Authorization", token);
 
       expect(response.status).toBe(404);
@@ -99,7 +100,7 @@ describe("GatewayRoutes integration", () => {
       (gatewayController.createGateway as jest.Mock).mockResolvedValue(undefined);
 
       const response = await request(app)
-        .post("/api/v1/networks/:networkCode/gateways")
+        .post("/api/v1/networks/test-network/gateways")
         .set("Authorization", adminToken)
         .send(newGateway);
 
@@ -112,7 +113,7 @@ describe("GatewayRoutes integration", () => {
       (gatewayController.createGateway as jest.Mock).mockResolvedValue(undefined);
 
       const response = await request(app)
-        .post("/api/v1/networks/:networkCode/gateways")
+        .post("/api/v1/networks/test-network/gateways")
         .set("Authorization", operatorToken)
         .send(newGateway);
 
@@ -125,7 +126,7 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .post("/api/v1/networks/:networkCode/gateways")
+        .post("/api/v1/networks/test-network/gateways")
         .set("Authorization", viewerToken)
         .send(newGateway);
 
@@ -140,7 +141,7 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .get("/api/v1/networks/non-existent")
+        .get("/api/v1/networks/non-existent/gateways")
         .set("Authorization", token);
 
       expect(response.status).toBe(404);
@@ -154,7 +155,7 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .post("/api/v1/networks/:networkCode/gateways")
+        .post("/api/v1/networks/test-network/gateways")
         .set("Authorization", adminToken)
         .send(newGateway);
 
@@ -191,7 +192,7 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .get("/api/v1/networks/non-existent")
+        .get("/api/v1/networks/non-existent/gateways/test-mac-address")
         .set("Authorization", token);
 
       expect(response.status).toBe(404);
@@ -265,7 +266,7 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .patch("/api/v1/networks/non-existent")
+        .patch("/api/v1/networks/non-existent/gateways/test-mac-address")
         .set("Authorization", adminToken)
         .send(updateData);
 
@@ -332,7 +333,7 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .delete("/api/v1/networks/non-existent")
+        .delete("/api/v1/networks/non-existent/gateways/test-mac-address")
         .set("Authorization", adminToken);
 
       expect(response.status).toBe(404);
