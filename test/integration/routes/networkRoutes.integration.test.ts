@@ -70,6 +70,18 @@ describe("NetworkRoutes integration", () => {
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
     });
+
+    it("should handle internal server error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (networkController.getAllNetworks as jest.Mock).mockRejectedValue(new Error("Internal error"));
+
+      const response = await request(app)
+        .get("/api/v1/networks")
+        .set("Authorization", adminToken);
+
+      expect(response.status).toBe(500);
+      expect(response.body.message).toMatch(/Internal server error/);
+    });
   });
 
   describe("POST /networks", () => {
@@ -132,6 +144,45 @@ describe("NetworkRoutes integration", () => {
       expect(response.status).toBe(409);
       expect(response.body.message).toMatch(/already exists/);
     });
+
+    it("should return 400 when network code is missing", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+
+      const invalidNetwork = {
+        name: "Test Network",
+        description: "Test network description"
+      };
+
+      const response = await request(app)
+        .post("/api/v1/networks")
+        .set("Authorization", adminToken)
+        .send(invalidNetwork);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toMatch(/Network code is required/);
+    });
+
+    it("should handle internal server error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (networkController.createNetwork as jest.Mock).mockRejectedValue(new Error("Internal error"));
+
+      const response = await request(app)
+        .post("/api/v1/networks")
+        .set("Authorization", adminToken)
+        .send(newNetwork);
+
+      expect(response.status).toBe(500);
+      expect(response.body.message).toMatch(/Internal server error/);
+    });
+
+    it("should return 401 without auth token", async () => {
+      const response = await request(app)
+        .post("/api/v1/networks")
+        .send(newNetwork);
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
+    });
   });
 
   describe("GET /networks/:networkCode", () => {
@@ -166,6 +217,26 @@ describe("NetworkRoutes integration", () => {
 
       expect(response.status).toBe(404);
       expect(response.body.message).toMatch(/not found/);
+    });
+
+    it("should handle internal server error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (networkController.getNetwork as jest.Mock).mockRejectedValue(new Error("Internal error"));
+
+      const response = await request(app)
+        .get("/api/v1/networks/test-net")
+        .set("Authorization", token);
+
+      expect(response.status).toBe(500);
+      expect(response.body.message).toMatch(/Internal server error/);
+    });
+
+    it("should return 401 without auth token", async () => {
+      const response = await request(app)
+        .get("/api/v1/networks/test-net");
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
     });
   });
 
@@ -228,6 +299,28 @@ describe("NetworkRoutes integration", () => {
       expect(response.status).toBe(404);
       expect(response.body.message).toMatch(/not found/);
     });
+
+    it("should handle internal server error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (networkController.updateNetwork as jest.Mock).mockRejectedValue(new Error("Internal error"));
+
+      const response = await request(app)
+        .patch("/api/v1/networks/test-net")
+        .set("Authorization", adminToken)
+        .send(updateData);
+
+      expect(response.status).toBe(500);
+      expect(response.body.message).toMatch(/Internal server error/);
+    });
+
+    it("should return 401 without auth token", async () => {
+      const response = await request(app)
+        .patch("/api/v1/networks/test-net")
+        .send(updateData);
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
+    });
   });
 
   describe("DELETE /networks/:networkCode", () => {
@@ -279,6 +372,26 @@ describe("NetworkRoutes integration", () => {
 
       expect(response.status).toBe(404);
       expect(response.body.message).toMatch(/not found/);
+    });
+
+    it("should handle internal server error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (networkController.deleteNetwork as jest.Mock).mockRejectedValue(new Error("Internal error"));
+
+      const response = await request(app)
+        .delete("/api/v1/networks/test-net")
+        .set("Authorization", adminToken);
+
+      expect(response.status).toBe(500);
+      expect(response.body.message).toMatch(/Internal server error/);
+    });
+
+    it("should return 401 without auth token", async () => {
+      const response = await request(app)
+        .delete("/api/v1/networks/test-net");
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
     });
   });
 }); 
