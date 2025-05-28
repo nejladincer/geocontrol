@@ -216,8 +216,15 @@ describe("GatewayRoutes integration", () => {
 
   describe("PATCH /networks/:networkCode/gateways/:macAddress", () => {
     const updateData = {
+      macAddress: "new-mac-address",
       name: "Updated Gateway",
       description: "Updated description"
+    };
+
+    const expectedNewValues = {
+      newMacAddress: "new-mac-address",
+      newName: "Updated Gateway",
+      newDescription: "Updated description"
     };
 
     it("should update gateway (admin)", async () => {
@@ -230,7 +237,7 @@ describe("GatewayRoutes integration", () => {
         .send(updateData);
 
       expect(response.status).toBe(204);
-      expect(gatewayController.updateGateway).toHaveBeenCalledWith("test-mac-address", "test-network", updateData);
+      expect(gatewayController.updateGateway).toHaveBeenCalledWith("test-mac-address", "test-network", expectedNewValues);
     });
 
     it("should update gateway (operator)", async () => {
@@ -243,6 +250,7 @@ describe("GatewayRoutes integration", () => {
         .send(updateData);
 
       expect(response.status).toBe(204);
+      expect(gatewayController.updateGateway).toHaveBeenCalledWith("test-mac-address", "test-network", expectedNewValues);
     });
 
     it("should return 403 for viewer", async () => {

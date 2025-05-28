@@ -61,7 +61,12 @@ router.patch(
   authenticateUser([UserType.Admin, UserType.Operator]),
   async (req, res, next) => {
     try {
-      await updateGateway(req.params.macAddress, req.params.networkCode, req.body);
+      const newValues = {
+        newMacAddress: req.body.macAddress,
+        newName: req.body.name,
+        newDescription: req.body.description
+      };
+      await updateGateway(req.params.macAddress, req.params.networkCode, newValues);
       res.status(204).send();
     } catch (error) {
       next(error);

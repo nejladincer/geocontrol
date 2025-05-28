@@ -1,6 +1,5 @@
-import { Entity, PrimaryColumn, Column, OneToMany, ManyToOne } from "typeorm";
-import { SensorDAO } from "./SensorDAO"; //TODO: SensorDAO will be created
-import { NetworkDAO } from "./NetworkDAO"; // Se il gateway appartiene a un network
+import { Entity, PrimaryColumn, Column, OneToMany, ManyToOne, JoinColumn } from "typeorm";
+import { NetworkDAO } from "./NetworkDAO";
 import { SensorDAO } from "./SensorDAO";
 
 @Entity("gateways")
