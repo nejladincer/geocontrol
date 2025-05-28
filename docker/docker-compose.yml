@@ -1,6 +1,6 @@
 x-constants:
   backend_host: &backend_host localhost
-  backend_port: &backend_port 5005
+  backend_port: &backend_port 5000
 
 services:
   frontend:
