@@ -30,6 +30,18 @@ export async function getSensor(sensorMac: string, gatewayMac: string, networkCo
   }
 }
 
+// Only for "internal" use, not exposed in Swagger API
+export async function getAllSensorsInNetwork(networkCode: string): Promise<SensorDTO[]> {
+  try {
+    const sensorRepo = new SensorRepository();
+    const sensors = await sensorRepo.getAllSensorsInNetwork(networkCode);
+    return sensors.map( (s) => mapSensorDAOToDTO(s) );
+  }
+  catch (error) {
+    throw new AppError("Failed to fetch sensors in network", 500);
+  }
+}
+
 export async function createSensor(sensorDto: SensorDTO, gatewayMac: string, networkCode: string): Promise<void> {
   if (!sensorDto.macAddress) throw new AppError("Sensor macAddress is required", 400);
 

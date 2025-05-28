@@ -1,5 +1,7 @@
-import {Entity, PrimaryColumn, Column, ManyToOne, JoinColumn} from "typeorm";
+import {Entity, PrimaryColumn, Column, ManyToOne, JoinColumn, OneToMany} from "typeorm";
 import { GatewayDAO } from "./GatewayDAO";
+import { MeasurementDAO } from "./MeasurementDAO";
+import { measureMemory } from "vm";
 
 @Entity("sensors")
 export class SensorDAO {
@@ -18,7 +20,12 @@ export class SensorDAO {
   @Column({ nullable: false })
   unit: string;
 
-  @ManyToOne(() => GatewayDAO, gateway => gateway.sensors, { onDelete: "CASCADE" })
+  // N Sensors : 1 Gateway
+  @ManyToOne(() => GatewayDAO, gateway => gateway.sensors, { cascade: true })
   @JoinColumn({ name: "gatewayMac" })
   gateway: GatewayDAO;
+
+  // 1 Sensor : N Measurements
+  @OneToMany(() => MeasurementDAO, measurement => measurement.sensor)
+  measurements: MeasurementDAO[];
 }

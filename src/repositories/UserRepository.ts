@@ -2,7 +2,7 @@ import { AppDataSource } from "@database";
 import { Repository } from "typeorm";
 import { UserDAO } from "@dao/UserDAO";
 import { UserType } from "@models/UserType";
-import { findOrThrowNotFound, throwConflictIfFound } from "@utils";
+import { findOrThrowNotFound, throwConflictIfFound } from "utils/utils";
 
 export class UserRepository {
   private repo: Repository<UserDAO>;

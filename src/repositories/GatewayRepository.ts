@@ -1,9 +1,8 @@
 import { AppDataSource } from "@database";
 import { Repository } from "typeorm";
 import { GatewayDAO } from "@dao/GatewayDAO";
-import { findOrThrowNotFound, throwConflictIfFound } from "@utils";
+import { findOrThrowNotFound, throwConflictIfFound } from "utils/utils";
 import { NetworkDAO } from "@dao/NetworkDAO";
-//import { SensorDAO } from "@dao/SensorDAO"; //TODO: SensorDAO will be created
 import { ConflictError } from "@models/errors/ConflictError";
 
 export class GatewayRepository {
