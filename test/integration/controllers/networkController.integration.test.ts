@@ -9,13 +9,15 @@ describe("NetworkController integration", () => {
     const fakeNetworkDAO: NetworkDAO = {
       code: "test-network",
       name: "Test Network",
-      description: "A test network"
+      description: "A test network",
+      gateways: []
     };
 
     const expectedDTO = {
       code: fakeNetworkDAO.code,
       name: fakeNetworkDAO.name,
-      description: fakeNetworkDAO.description
+      description: fakeNetworkDAO.description,
+      gateways: fakeNetworkDAO.gateways
     };
 
     (NetworkRepository as jest.Mock).mockImplementation(() => ({
@@ -36,12 +38,14 @@ describe("NetworkController integration", () => {
       {
         code: "network-1",
         name: "Network 1",
-        description: "First network"
+        description: "First network",
+        gateways: []
       },
       {
         code: "network-2",
         name: "Network 2",
-        description: "Second network"
+        description: "Second network",
+        gateways: []
       }
     ];
 

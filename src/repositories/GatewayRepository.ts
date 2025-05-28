@@ -22,16 +22,14 @@ export class GatewayRepository {
       throw new Error(`Network with code '${code}' not found`);
     }
 
-    // Get all gateways for this network with relations loaded
     return this.repo.find({
-      where: { network: { code } },
-      relations: ['network']
+      where: { networkCode: code },
     });
   }
 
   async getGatewayByMacAddress(macAddress: string, networkCode: string): Promise<GatewayDAO> {
     return findOrThrowNotFound(
-      await this.repo.find({ where: { macAddress, network: { code: networkCode } } }),
+      await this.repo.find({ where: { macAddress, networkCode } }),
       () => true,
       `Gateway with macAddress '${macAddress}' not found`
     );
@@ -42,7 +40,7 @@ export class GatewayRepository {
     name: string,
     description: string,
     //sensors: SensorDAO[],
-    network: NetworkDAO
+    networkCode: string
   ): Promise<GatewayDAO> {
     throwConflictIfFound(
       await this.repo.find({ where: { macAddress } }),
@@ -55,7 +53,7 @@ export class GatewayRepository {
       name: name,
       description: description,
       //sensors: sensors,
-      network: network
+      networkCode: networkCode
     });
   }
 
