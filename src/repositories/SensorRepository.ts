@@ -30,10 +30,11 @@ export class SensorRepository {
   }
 
   async getAllSensorsInGateway(gatewayMac: string): Promise<SensorDAO[]> {
-    return this.repo.find({
-      where: { gateway: { macAddress: gatewayMac } },
-      relations: ["gateway"]
-    });
+    return this.repo
+      .createQueryBuilder("sensor")
+      .leftJoinAndSelect("sensor.gateway", "gateway")
+      .where("gateway.macAddress = :gatewayMac", { gatewayMac })
+      .getMany();
   }
 
   async getSensorByMacAddress(macAddress: string, gatewayMac: string): Promise<SensorDAO> {

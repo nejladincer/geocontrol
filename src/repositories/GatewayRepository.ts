@@ -23,14 +23,19 @@ export class GatewayRepository {
     }
 
     return this.repo.find({
-      where: { networkCode: code },
+      where: { network: { code } },
+      relations: ['network']
     });
   }
 
   async getGatewayByMacAddress(macAddress: string, networkCode: string): Promise<GatewayDAO> {
+    const gateway = await this.repo.findOne({ 
+      where: { macAddress, network: { code: networkCode } },
+      relations: ['network', 'sensors']
+    });
     return findOrThrowNotFound(
-      await this.repo.find({ where: { macAddress, networkCode } }),
-      () => true,
+      gateway ? [gateway] : [],
+      (g) => g !== null, 
       `Gateway with macAddress '${macAddress}' not found`
     );
   }
@@ -53,7 +58,7 @@ export class GatewayRepository {
       name: name,
       description: description,
       //sensors: sensors,
-      networkCode: networkCode
+      network: { code: networkCode }
     });
   }
 

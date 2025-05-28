@@ -8,6 +8,7 @@ import { ErrorDTO } from "@models/dto/ErrorDTO";
 import { UserType } from "@models/UserType";
 import { Gateway as GatewayDTO } from "@models/dto/Gateway";
 import { removeNullAttributes } from "@services/mappings/utilsMapperService";
+import { mapSensorDAOToDTO } from "./errorMapperService";
 
 
 /* GATEWAY DTO */
@@ -15,18 +16,24 @@ export function createGatewayDTO(
   macAddress: string,
   name: string,
   description: string,
-  networkCode: string
-  //sensors: SensorDAO[]
+  networkCode: string,
+  sensors: any[] = []
 ): GatewayDTO {
   return removeNullAttributes({
     macAddress,
     name,
     description,
-    networkCode
-    //sensors
+    networkCode,
+    sensors
   }) as GatewayDTO;
 }
 
 export function mapGatewayDAOToDTO(gatewayDAO: GatewayDAO): GatewayDTO {
-  return createGatewayDTO(gatewayDAO.macAddress, gatewayDAO.name, gatewayDAO.description, gatewayDAO.networkCode); //gatewayDAO.sensors);
+  return createGatewayDTO(
+    gatewayDAO.macAddress, 
+    gatewayDAO.name, 
+    gatewayDAO.description, 
+    gatewayDAO.network?.code || '',
+    gatewayDAO.sensors?.map(sensor => mapSensorDAOToDTO(sensor)) || []
+  );
 }
