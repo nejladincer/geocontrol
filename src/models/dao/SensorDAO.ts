@@ -20,12 +20,12 @@ export class SensorDAO {
   @Column({ nullable: false })
   unit: string;
 
-  // N Sensors : 1 Gateway
-  @ManyToOne(() => GatewayDAO, gateway => gateway.sensors, { cascade: true })
-  @JoinColumn({ name: "gatewayMac" })
+  @ManyToOne(() => GatewayDAO, gateway => gateway.sensors, {
+    onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "gatewayMac" }) // deve esistere
   gateway: GatewayDAO;
 
-  // 1 Sensor : N Measurements
-  @OneToMany(() => MeasurementDAO, measurement => measurement.sensor)
-  measurements: MeasurementDAO[];
+  @Column()
+  gatewayMac: string;
 }
