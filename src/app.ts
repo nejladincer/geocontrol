@@ -27,7 +27,7 @@ app.use(CONFIG.ROUTES.V1_USERS, userRouter);
 app.use(CONFIG.ROUTES.V1_NETWORKS, networkRouter);
 app.use(CONFIG.ROUTES.V1_GATEWAYS, gatewayRouter);
 app.use(CONFIG.ROUTES.V1_SENSORS, sensorRouter);
-app.use(measurementRouter);
+app.use("/api/v1", measurementRouter);
 
 //This must always be the last middleware added
 app.use(errorHandler);

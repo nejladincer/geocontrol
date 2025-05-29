@@ -1,5 +1,5 @@
 import { AppDataSource } from "@database";
-import { LessThanOrEqual, MoreThanOrEqual, Repository, And } from "typeorm";
+import { LessThanOrEqual, MoreThanOrEqual, Repository, And, In } from "typeorm";
 import { MeasurementDAO } from "@dao/MeasurementDAO";
 import { UserType } from "@models/UserType";
 import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
@@ -17,12 +17,16 @@ import { Stats } from "@models/dto/Stats";
 import { calculateStats } from "@utils/statsUtils";
 import { Sensor } from "@models/dto/Sensor";
 import AppError from "@models/errors/AppError";
+import { SensorDAO } from "@dao/SensorDAO";
+import { SensorRepository } from "./SensorRepository";
 
 export class MeasurementsRepository {
   private repo: Repository<MeasurementDAO>;
+  private sensorRepo: SensorRepository;
 
   constructor() {
     this.repo = AppDataSource.getRepository(MeasurementDAO);
+    this.sensorRepo = new SensorRepository();
   }
 
   private validateDates(startDate?: string, endDate?: string): { startDateISO: string, endDateISO: string } {
@@ -67,20 +71,91 @@ export class MeasurementsRepository {
     startDate?: string,
     endDate?: string
   ): Promise<Measurements[]> {
-    const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
+    try {
+      const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
-    let sensorMacsArray: string[] = [];
-    if (!sensorMacs || sensorMacs.length === 0) {
-      // If no sensor MACs are provided, get all sensors for the network
-      sensorMacsArray =  (await getAllSensorsInNetwork(networkCode)).map(s => s.macAddress);
+      // Validate Network Code
+      validateNetworkCode(networkCode);
+
+      // Get all sensors for the network if none specified
+      let sensorMacsArray: string[] = [];
+      if (!sensorMacs || sensorMacs.length === 0) {
+        const sensors = await getAllSensorsInNetwork(networkCode);
+        sensorMacsArray = sensors.map(s => s.macAddress);
+      } else {
+        sensorMacsArray = sensorMacs;
+      }
+
+      // Validate all sensor MACs
+      sensorMacsArray.forEach(mac => validateSensorMac(mac));
+
+      const measurements: MeasurementDAO[] = await this.repo
+        .find({
+          relations: {
+            sensor: true
+          },
+          where: {
+            sensor: {
+              macAddress: In(sensorMacsArray)
+            },
+            createdAt: And(MoreThanOrEqual(startDateISO), LessThanOrEqual(endDateISO))
+          }
+        });
+
+      // Group measurements by sensor
+      const measurementsBySensor = new Map<string, MeasurementDAO[]>();
+      measurements.forEach(m => {
+        const sensorMac = m.sensor.macAddress;
+        if (!measurementsBySensor.has(sensorMac)) {
+          measurementsBySensor.set(sensorMac, []);
+        }
+        measurementsBySensor.get(sensorMac).push(m);
+      });
+
+      // Create Measurements object for each sensor
+      const result: Measurements[] = [];
+      for (const [sensorMac, sensorMeasurements] of measurementsBySensor) {
+        const stats = await calculateStats(sensorMeasurements, startDateISO, endDateISO);
+        
+        // Fill "isOutlier" field in each measurement
+        sensorMeasurements.forEach((m) => {
+          m.isOutlier = m.value > stats.upperThreshold || m.value < stats.lowerThreshold;
+        });
+
+        // Convert to Measurement DTO
+        const measurementsArray = sensorMeasurements.map(m => ({
+          createdAt: new Date(m.createdAt),
+          value: Number(m.value),
+          isOutlier: Boolean(m.isOutlier)
+        }));
+
+        result.push({
+          sensorMacAddress: sensorMac,
+          stats: stats,
+          measurements: measurementsArray
+        });
+      }
+
+      // Handle sensors with no measurements
+      for (const sensorMac of sensorMacsArray) {
+        if (!measurementsBySensor.has(sensorMac)) {
+          const emptyStats = await calculateStats([], startDateISO, endDateISO);
+          result.push({
+            sensorMacAddress: sensorMac,
+            stats: emptyStats,
+            measurements: []
+          });
+        }
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Error in getMeasurementsFromSensorsInNetwork:', error);
+      throw new AppError(`Failed to get measurements for network ${networkCode}: ${error.message}`, 500);
     }
-   
-    let measurementsArray: Measurements[] = [];
-    sensorMacs.forEach( async (m) => {
-      measurementsArray.push( await this.getMeasurementsFromSensor(networkCode, m, startDateISO, endDateISO) ); 
-    });
-
-   return <Measurements[]> measurementsArray;
   }
 
   // [DONE]
@@ -147,44 +222,69 @@ export class MeasurementsRepository {
     createdAt: string, 
     value: number
   ) : Promise<void> {
+    try {
+      // Validation 
+      validateNetworkCode(networkCode);
+      validateGatewayMac(gatewayMac);
+      validateSensorMac(sensorMac);
 
-    // Validation 
-    validateNetworkCode(networkCode);
-    validateGatewayMac(gatewayMac);
-    validateSensorMac(sensorMac);
+      // Get the sensor DAO and verify it exists
+      const sensor = await this.sensorRepo.getSensorByMacAddress(sensorMac, gatewayMac);
+      if (!sensor) {
+        throw new AppError(`Sensor ${sensorMac} not found in gateway ${gatewayMac}`, 404);
+      }
 
-    // Create a new MeasurementDAO object
-    const newMeasurementToInsert: MeasurementDAO = new MeasurementDAO();
-    
-    const sensor = await getSensor(networkCode, gatewayMac, sensorMac);
-    
-    // Retrieve existing measurements for the sensor
-    const oldSensorMeasurements: Measurements = await this.getMeasurementsFromSensor(networkCode, gatewayMac, sensorMac);
-    
-    // Create new sensor measurements to then calculate new statistics on it
-    const newSensorMeasurements: Measurements = {
-      sensorMacAddress: sensorMac,
-      stats: oldSensorMeasurements.stats,
-      measurements: [...oldSensorMeasurements.measurements, {
+      // Create a new MeasurementDAO object
+      const newMeasurementToInsert: MeasurementDAO = new MeasurementDAO();
+      
+      // Retrieve existing measurements for the sensor
+      let oldSensorMeasurements: Measurements;
+      try {
+        oldSensorMeasurements = await this.getMeasurementsFromSensor(networkCode, gatewayMac, sensorMac);
+      } catch (error) {
+        // If no measurements exist yet, create an empty measurements object
+        oldSensorMeasurements = {
+          sensorMacAddress: sensorMac,
+          stats: await calculateStats([], new Date(0).toISOString(), new Date().toISOString()),
+          measurements: []
+        };
+      }
+      
+      // Create new sensor measurements to then calculate new statistics on it
+      const newMeasurement = {
         createdAt: new Date(createdAt),
         value: value,
         isOutlier: false // Default value, will be updated before saving
-      }]
-    };
+      };
 
-    // Calculate stats for the new measurements 
-    const newStats: Stats = await calculateStats(newSensorMeasurements.measurements, oldSensorMeasurements.stats.startDate.toISOString(), oldSensorMeasurements.stats.endDate.toISOString());
+      const allMeasurements = [...oldSensorMeasurements.measurements, newMeasurement];
 
-    // Calculate and set isOutlier field based on new statistics
-    const isOutlier = (value > newStats.upperThreshold || value < newStats.lowerThreshold);
-    newSensorMeasurements.measurements[newSensorMeasurements.measurements.length - 1].isOutlier = isOutlier;
-    
-    newMeasurementToInsert.code = sensorMac + "-" + new Date(createdAt).getTime(); // Unique code for the measurement
-    newMeasurementToInsert.createdAt = createdAt;
-    newMeasurementToInsert.value = value;
-    newMeasurementToInsert.isOutlier = isOutlier; // Store the calculated isOutlier value in the DAO
+      // Calculate stats for all measurements
+      const newStats: Stats = await calculateStats(
+        allMeasurements,
+        oldSensorMeasurements.stats?.startDate?.toISOString() || new Date(0).toISOString(),
+        new Date().toISOString()
+      );
 
-    this.repo.save(newMeasurementToInsert);
+      // Calculate and set isOutlier field based on new statistics
+      const isOutlier = (value > newStats.upperThreshold || value < newStats.lowerThreshold);
+      
+      // Set all the required fields for the new measurement
+      newMeasurementToInsert.code = sensorMac + "-" + new Date(createdAt).getTime(); // Unique code for the measurement
+      newMeasurementToInsert.createdAt = createdAt;
+      newMeasurementToInsert.value = value;
+      newMeasurementToInsert.isOutlier = isOutlier;
+      newMeasurementToInsert.sensor = sensor; // Set the sensor relationship
+
+      // Save the measurement and wait for it to complete
+      await this.repo.save(newMeasurementToInsert);
+    } catch (error) {
+      console.error('Error in storeMeasurementForSensor:', error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(`Failed to store measurement: ${error.message}`, 500);
+    }
   }
 
   // [DONE]
@@ -196,61 +296,61 @@ export class MeasurementsRepository {
     startDate?: string,
     endDate?: string
   ): Promise<Measurements> {
-    const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
+    try {
+      const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
-    // Validate Network Code, and if exists, get the network
-    validateNetworkCode(networkCode);
+      // Validation 
+      validateNetworkCode(networkCode);
+      validateGatewayMac(gatewayMac);
+      validateSensorMac(sensorMac);
 
-    // Validate Gateway MAC Address, and if exists, get the gateway 
-    validateGatewayMac(gatewayMac);
-
-    // Validate Sensor MAC Address, and if exists, get the sensor
-    validateSensorMac(sensorMac);
-
-    const measurements: MeasurementDAO[] = await this.repo
-    .find({
-      // Join via "sensor" attribute with "measurements" table
-      relations: {
-        sensor: true
-      },
-
-      where: {
-        createdAt: And(MoreThanOrEqual(startDateISO), LessThanOrEqual(endDateISO))
-      },
-
-      select: {
-        createdAt: true,
-        value: true,
-        isOutlier: true
+      // Get the sensor DAO and verify it exists
+      const sensor = await this.sensorRepo.getSensorByMacAddress(sensorMac, gatewayMac);
+      if (!sensor) {
+        throw new AppError(`Sensor ${sensorMac} not found in gateway ${gatewayMac}`, 404);
       }
-    });
 
-    // Calculate stats and save them in the repo too
-    const stats: Stats = await calculateStats(measurements, startDateISO, endDateISO);
-    
-    // Fill "isOutlier" field in each measurement
-    measurements.forEach((m) => {
-      if (m.value > stats.upperThreshold || m.value < stats.lowerThreshold) {
-        m.isOutlier = true;
+      const measurements: MeasurementDAO[] = await this.repo
+        .find({
+          relations: {
+            sensor: true
+          },
+          where: {
+            sensor: {
+              macAddress: sensorMac,
+              gateway: { macAddress: gatewayMac }
+            },
+            createdAt: And(MoreThanOrEqual(startDateISO), LessThanOrEqual(endDateISO))
+          }
+        });
+
+      // Calculate stats for the measurements
+      const stats: Stats = await calculateStats(measurements, startDateISO, endDateISO);
+      
+      // Fill "isOutlier" field in each measurement
+      measurements.forEach((m) => {
+        m.isOutlier = m.value > stats.upperThreshold || m.value < stats.lowerThreshold;
+      });
+
+      // Convert measurements to DTOs
+      const measurementsArray: Array<Measurement> = measurements.map(m => ({
+        createdAt: new Date(m.createdAt), 
+        value: Number(m.value),
+        isOutlier: Boolean(m.isOutlier)
+      }));
+
+      return {
+        sensorMacAddress: sensorMac,
+        stats: stats,
+        measurements: measurementsArray
+      };
+    } catch (error) {
+      console.error('Error in getMeasurementsFromSensor:', error);
+      if (error instanceof AppError) {
+        throw error;
       }
-      else {
-        m.isOutlier = false;
-      }
-    });
-
-    // Convert "raw" measurements to Measurement DTO
-    const measurementsArray: Array<Measurement> = measurements.map(m => ({
-      createdAt: new Date(m.createdAt), 
-      value: Number(m.value),
-      isOutlier: Boolean(m.isOutlier)
-    }));
-
-    return <Measurements> {
-      sensorMacAddress: sensorMac,
-      stats: stats,
-      measurements: measurementsArray
-    };
-
+      throw new AppError(`Failed to get measurements for sensor ${sensorMac}: ${error.message}`, 500);
+    }
   }
 
   // [DONE]

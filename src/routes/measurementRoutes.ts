@@ -7,6 +7,7 @@ import {
   getStatsFromSensor,
   getOutliersFromSensor,
   storeMeasurementForSensor,
+  storeMeasurementsForSensorBulk,
   getMeasurementsFromSensorsInNetwork,
   getStatsFromSensorsInNetwork,
   getOutliersFromSensorsInNetwork
@@ -27,13 +28,30 @@ router.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { networkCode, gatewayMac, sensorMac } = req.params;
-      const { createdAt, value } = req.body;
+      const measurements = req.body;
       
-      if (!createdAt || !value) {
-        throw new AppError("Missing required fields", 400);
+      if (!Array.isArray(measurements)) {
+        throw new AppError("Request body must be an array of measurements", 400);
       }
 
-      await storeMeasurementForSensor(networkCode, gatewayMac, sensorMac, createdAt, value);
+      // Validate each measurement
+      for (const measurement of measurements) {
+        if (!measurement.createdAt || typeof measurement.value !== 'number') {
+          throw new AppError("Each measurement must have createdAt and value fields", 400);
+        }
+      }
+
+      // Store each measurement
+      for (const measurement of measurements) {
+        await storeMeasurementForSensor(
+          networkCode,
+          gatewayMac,
+          sensorMac,
+          measurement.createdAt,
+          measurement.value
+        );
+      }
+
       res.status(201).send();
     } catch (error) {
       next(error instanceof AppError ? error : new AppError("Internal server error", 500));
@@ -170,6 +188,34 @@ router.get(
         endDate as string
       );
       res.status(200).json(outliers);
+    } catch (error) {
+      next(error instanceof AppError ? error : new AppError("Internal server error", 500));
+    }
+  }
+);
+
+// (4) Store measurements for a sensor in bulk (Admin & Operator)
+router.post(
+  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/measurements/bulk",
+  authenticateUser([UserType.Admin, UserType.Operator]),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { networkCode, gatewayMac, sensorMac } = req.params;
+      const { measurements } = req.body;
+      
+      if (!Array.isArray(measurements) || measurements.length === 0) {
+        throw new AppError("Measurements must be a non-empty array", 400);
+      }
+
+      // Validate each measurement
+      for (const measurement of measurements) {
+        if (!measurement.createdAt || typeof measurement.value !== 'number') {
+          throw new AppError("Each measurement must have createdAt and value fields", 400);
+        }
+      }
+
+      await storeMeasurementsForSensorBulk(networkCode, gatewayMac, sensorMac, measurements);
+      res.status(201).send();
     } catch (error) {
       next(error instanceof AppError ? error : new AppError("Internal server error", 500));
     }

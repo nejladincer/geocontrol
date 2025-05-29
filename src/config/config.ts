@@ -11,6 +11,7 @@ const URL_USERS = "/users";
 const URL_NETWORKS = "/networks";
 const URL_GATEWAYS = "/:networkCode/gateways";
 const URL_SENSORS = "/:gatewayMac/sensors";
+const URL_MEASUREMENTS = "/:networkCode/measurements";
 
 export const TOKEN_LIFESPAN = "24h";
 export const SECRET_KEY = "b}2ZzqQ!eQ!t7rFeT[GHs6FZ+*L]2VqR{vnLn>4-V3[5W-V{f^";
@@ -39,7 +40,8 @@ export const CONFIG = {
     V1_USERS: APP_V1_BASE_URL + URL_USERS,
     V1_NETWORKS: APP_V1_BASE_URL + URL_NETWORKS,
     V1_GATEWAYS: APP_V1_BASE_URL + URL_NETWORKS + URL_GATEWAYS,
-    V1_SENSORS: APP_V1_BASE_URL + URL_NETWORKS + URL_GATEWAYS + URL_SENSORS
+    V1_SENSORS: APP_V1_BASE_URL + URL_NETWORKS + URL_GATEWAYS + URL_SENSORS,
+    V1_MEASUREMENTS: APP_V1_BASE_URL + URL_NETWORKS + URL_MEASUREMENTS
   },
   LOG_LEVEL: process.env.LOG_LEVEL || "info",
   LOG_PATH: process.env.LOG_PATH || "logs",

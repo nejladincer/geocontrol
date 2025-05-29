@@ -3,6 +3,11 @@ import { Stats } from '@models/dto/Stats';
 import AppError from '@models/errors/AppError';
 import { MeasurementsRepository } from '@repositories/MeasurementsRepository';
 
+interface BulkMeasurement {
+  createdAt: string;
+  value: number;
+}
+
 export async function getMeasurementsFromSensorsInNetwork(
   networkCode: string,
   sensorMacs?: string[],
@@ -102,5 +107,27 @@ export async function getOutliersFromSensor(
     return await measurementsRepo.getOutliersFromSensor(networkCode, gatewayMac, sensorMac, startDate, endDate);
   } catch (error) {
     throw (error instanceof AppError) ? error : new AppError("Failed to get outliers", 500);
+  }
+}
+
+export async function storeMeasurementsForSensorBulk(
+  networkCode: string,
+  gatewayMac: string,
+  sensorMac: string,
+  measurements: BulkMeasurement[]
+): Promise<void> {
+  try {
+    const measurementsRepo = new MeasurementsRepository();
+    for (const measurement of measurements) {
+      await measurementsRepo.storeMeasurementForSensor(
+        networkCode,
+        gatewayMac,
+        sensorMac,
+        measurement.createdAt,
+        measurement.value
+      );
+    }
+  } catch (error) {
+    throw (error instanceof AppError) ? error : new AppError("Failed to store measurements in bulk", 500);
   }
 }

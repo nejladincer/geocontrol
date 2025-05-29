@@ -9,7 +9,7 @@ import { getSensor } from '@controllers/SensorController';
 import { MeasurementsRepository } from '@repositories/MeasurementsRepository';
 import { AppDataSource } from '@database';
 import { MeasurementDAO } from '@models/dao/MeasurementDAO';
-import { isoToDate } from './dateUtils';
+import { dateToISO, isoToDate, stringToISO } from './dateUtils';
 
 export async function calculateStats(
   measurements: any[],
@@ -17,34 +17,42 @@ export async function calculateStats(
   endDate?: string,
   ) : Promise<Stats> {
 
-    let startDateISO, endDateISO;
+    // Convert dates to ISO format
+    const startISO = startDate ? stringToISO(startDate) : dateToISO(new Date(0));
+    const endISO = endDate ? stringToISO(endDate) : dateToISO(new Date());
 
-    // Validate start and end dates
-    if (!startDate) {
-      startDateISO = new Date(0).toISOString(); // Start of time
-    } else if (!endDate) {
-      endDateISO = new Date().toISOString(); // Current time
+    // Handle empty measurements array
+    if (!measurements || measurements.length === 0) {
+      return {
+        startDate: startISO.toDate(),
+        endDate: endISO.toDate(),
+        mean: 0,
+        variance: 0,
+        upperThreshold: 0,
+        lowerThreshold: 0
+      };
     }
 
-    // Calculate stats from measurements
-    const mean = measurements.reduce( (sum, m) => sum + m ) / measurements.length;
+    // Extract values from measurements if they are measurement objects
+    const values = measurements.map(m => typeof m === 'number' ? m : Number(m.value));
 
-    let variance = 0;
-    measurements.forEach( (m) => variance += (m - mean)**2 );
-    variance /= measurements.length;
+    // Calculate mean
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
 
+    // Calculate variance
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+
+    // Calculate standard deviation and thresholds
     const stdDev = Math.sqrt(variance);
+    const upperThreshold = mean + 2 * stdDev;
+    const lowerThreshold = mean - 2 * stdDev;
 
-    const upperThreshold = mean + 2*stdDev;
-    const lowerThreshold = mean - 2*stdDev;
-
-    return <Stats> {
-      startDate: isoToDate(startDateISO),
-      endDate: isoToDate(endDateISO),
+    return {
+      startDate: startISO.toDate(),
+      endDate: endISO.toDate(),
       mean: mean,
       variance: variance,
       upperThreshold: upperThreshold,
       lowerThreshold: lowerThreshold
     };
-
 }
