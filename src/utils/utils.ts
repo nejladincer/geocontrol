@@ -53,7 +53,7 @@ export function parseStringArrayParam(param?: unknown): string[] | undefined {
 
 /* VALIDATION FUNCTIONS */
 function validName(name: string): boolean {
-  const regexp = new RegExp("/^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/");
+  const regexp = new RegExp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
   if (!regexp.test(name)) {
     return false;
   }
@@ -71,6 +71,7 @@ export function validateNetworkCode(networkCode: string): void {
 /* GATEWAYS VALIDATION */
 export function validateGatewayMac(gatewayMac: string): void {
   if (!gatewayMac || typeof gatewayMac !== "string" || !validName(gatewayMac)) {
+    console.log(`MAC Ad`)
     throw new Error(`Invalid gateway MAC address ${gatewayMac}`);
   }
 }

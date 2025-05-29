@@ -148,19 +148,37 @@ export class MeasurementsRepository {
     value: number
   ) : Promise<void> {
 
-    // Validation 
-    validateNetworkCode(networkCode);
-    validateGatewayMac(gatewayMac);
-    validateSensorMac(sensorMac);
+    console.log("ENTRATO");
 
+
+    // Validation 
+    
+    validateNetworkCode(networkCode);
+    console.log("NETWORK OK");
+
+    validateGatewayMac(gatewayMac);
+    console.log("GATEWAY OK");
+
+    validateSensorMac(sensorMac);
+    console.log("SENSOR OK");
+    
     // Create a new MeasurementDAO object
     const newMeasurementToInsert: MeasurementDAO = new MeasurementDAO();
     
-    const sensor = await getSensor(networkCode, gatewayMac, sensorMac);
+    console.log("MEASUREMENT DAO CREATOOO");
+
+
+    // const sensor = await getSensor(networkCode, gatewayMac, sensorMac);
     
+    console.log("CIAONE1");
+
+
     // Retrieve existing measurements for the sensor
     const oldSensorMeasurements: Measurements = await this.getMeasurementsFromSensor(networkCode, gatewayMac, sensorMac);
     
+    console.log("CIAONE1.5");
+
+
     // Create new sensor measurements to then calculate new statistics on it
     const newSensorMeasurements: Measurements = {
       sensorMacAddress: sensorMac,
@@ -172,6 +190,9 @@ export class MeasurementsRepository {
       }]
     };
 
+    console.log("CIAONE2");
+
+
     // Calculate stats for the new measurements 
     const newStats: Stats = await calculateStats(newSensorMeasurements.measurements, oldSensorMeasurements.stats.startDate.toISOString(), oldSensorMeasurements.stats.endDate.toISOString());
 
@@ -179,12 +200,19 @@ export class MeasurementsRepository {
     const isOutlier = (value > newStats.upperThreshold || value < newStats.lowerThreshold);
     newSensorMeasurements.measurements[newSensorMeasurements.measurements.length - 1].isOutlier = isOutlier;
     
+    console.log("CIAONE3");
+
+
     newMeasurementToInsert.code = sensorMac + "-" + new Date(createdAt).getTime(); // Unique code for the measurement
     newMeasurementToInsert.createdAt = createdAt;
     newMeasurementToInsert.value = value;
     newMeasurementToInsert.isOutlier = isOutlier; // Store the calculated isOutlier value in the DAO
 
+
     this.repo.save(newMeasurementToInsert);
+
+
+    console.log("CIAONE DOPO");
   }
 
   // [DONE]
