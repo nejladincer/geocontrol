@@ -2,7 +2,7 @@ import { AppDataSource } from "@database";
 import { Repository } from "typeorm";
 import { SensorDAO } from "@dao/SensorDAO";
 import { GatewayDAO } from "@dao/GatewayDAO";
-import { findOrThrowNotFound, throwConflictIfFound } from "utils/utils";
+import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
 
 export class SensorRepository {
   private repo: Repository<SensorDAO>;

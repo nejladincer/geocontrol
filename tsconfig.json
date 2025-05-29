@@ -25,7 +25,7 @@
       "@middlewares/*": ["middlewares/*"],
       "@database": ["database/connection.ts"],
       "@config": ["config/config.ts"],
-      "@utils": ["utils.ts"],
+      "@utils/*": ["utils/*"],
       "@app": ["app.ts"],
       "@test/*": ["../test/*"]
     }

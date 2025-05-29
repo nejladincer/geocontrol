@@ -1,7 +1,7 @@
 import { AppDataSource } from "@database";
 import { Repository } from "typeorm";
 import { NetworkDAO } from "@dao/NetworkDAO";
-import { findOrThrowNotFound, throwConflictIfFound } from "utils/utils";
+import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
 
 export class NetworkRepository {
   private repo: Repository<NetworkDAO>;
