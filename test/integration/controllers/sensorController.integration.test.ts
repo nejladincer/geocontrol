@@ -4,6 +4,7 @@ import { GatewayRepository } from "@repositories/GatewayRepository";
 import { GatewayDAO } from "@dao/GatewayDAO";
 import { SensorDAO } from "@dao/SensorDAO";
 import { Sensor as SensorDTO } from "@dto/Sensor";
+import { NetworkDAO } from "@dao/NetworkDAO";
 
 jest.mock("@repositories/SensorRepository");
 jest.mock("@repositories/GatewayRepository");
@@ -16,6 +17,7 @@ describe("SensorController integration", () => {
     macAddress: gatewayMac,
     name: "Gateway 1",
     description: "Test gateway",
+    network: {} as NetworkDAO,
     networkCode: networkCode,
     sensors: [] // Required field
   };
@@ -27,7 +29,9 @@ describe("SensorController integration", () => {
       description: "First sensor",
       variable: "temperature",
       unit: "C",
-      gateway: gatewayMac
+      gateway: fakeGatewayDAO,
+      gatewayMac: gatewayMac,
+      measurements: []
     },
     {
       macAddress: "sensor-2",
@@ -35,7 +39,9 @@ describe("SensorController integration", () => {
       description: "Second sensor",
       variable: "humidity",
       unit: "%",
-      gateway: gatewayMac
+      gateway: fakeGatewayDAO,
+      gatewayMac: gatewayMac,
+      measurements: []
     }
   ];
 

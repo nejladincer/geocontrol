@@ -2,7 +2,7 @@ import { Sensor as SensorDTO } from "@dto/Sensor";
 import { SensorRepository } from "@repositories/SensorRepository";
 import { GatewayRepository } from "@repositories/GatewayRepository";
 import AppError from "@models/errors/AppError";
-import { mapSensorDAOToDTO } from "@services/mappings/errorMapperService";
+import { mapSensorDAOToDTO } from "@services/mappings/sensorMapperService";
 
 export async function getAllSensors(networkCode: string, gatewayMac: string): Promise<SensorDTO[]> {
   try {

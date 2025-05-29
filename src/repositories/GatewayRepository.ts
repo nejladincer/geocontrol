@@ -78,7 +78,7 @@ export class GatewayRepository {
     const targetGateway = await this.getGatewayByMacAddress(macAddress, networkCode);
   
     if (newValues.newMacAddress && newValues.newMacAddress !== macAddress) {
-      const existing = await this.repo.findOne({ where: { macAddress: newValues.newMacAddress } });
+      const existing = await this.repo.find({ where: { macAddress: newValues.newMacAddress } });
   
       if (existing) {
         throw new ConflictError(`Gateway with macAddress '${newValues.newMacAddress}' already exists`);

@@ -78,7 +78,6 @@ describe("Gateways API (e2e)", () => {
       expect(res.status).toBe(404);
     });
   });
-
   describe("POST /networks/:networkCode/gateways", () => {
     const newGateway = {
       macAddress: "test-mac-address",
@@ -106,6 +105,20 @@ describe("Gateways API (e2e)", () => {
       expect(res.status).toBe(201);
     });
 
+    it("should return 400 if macAddress is missing", async () => {
+      const res = await request(app)
+        .post(`/api/v1/networks/${testNetwork}/gateways`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          name: "Gateway Without MAC",
+          description: "Missing mac address"
+        });
+    
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/MacAddress is required/i);
+    });
+    
+
     it("should fail to create gateway (viewer)", async () => {
       const res = await request(app)
         .post(`/api/v1/networks/${testNetwork}/gateways`)
@@ -130,6 +143,20 @@ describe("Gateways API (e2e)", () => {
         .send(newGateway);
 
       expect(res.status).toBe(404);
+    });
+
+    it("should return 400 if networkCode is missing in route", async () => {
+      const res = await request(app)
+        .post("/api/v1/networks//gateways") // networkCode vuoto
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          macAddress: "some-mac",
+          name: "No Network",
+          description: "Missing networkCode"
+        });
+    
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/NetworkCode is required/i);
     });
 
     it("should fail with duplicate gateway mac address", async () => {

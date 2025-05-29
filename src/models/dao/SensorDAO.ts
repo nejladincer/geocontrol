@@ -28,4 +28,7 @@ export class SensorDAO {
 
   @Column()
   gatewayMac: string;
+
+  @OneToMany(() => MeasurementDAO, (measurement) => measurement.sensor)
+measurements: MeasurementDAO[];
 }

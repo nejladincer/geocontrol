@@ -37,8 +37,13 @@ export async function createGateway(gatewayDto: GatewayDTO, networkCode: string)
   if (!gatewayDto.macAddress) {
     throw new AppError("MAC address is required", 400);
   }
-
   try {
+    const networkRepo = new NetworkRepository();
+    const network = await networkRepo.getNetworkByCode(networkCode);
+    if (!network) {
+      throw new AppError(`Network with code '${networkCode}' not found`, 404);
+    }
+    
     const gatewayRepo = new GatewayRepository();
     await gatewayRepo.createGateway(
       gatewayDto.macAddress,
