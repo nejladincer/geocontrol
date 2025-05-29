@@ -11,7 +11,6 @@ import { ConflictError } from "@models/errors/ConflictError";
 
 jest.mock("@services/authService");
 jest.mock("@controllers/gatewayController");
-jest.unmock("@middlewares/authMiddleware");
 
 describe("GatewayRoutes integration", () => {
   const token = "Bearer faketoken";
@@ -25,8 +24,8 @@ describe("GatewayRoutes integration", () => {
 
   describe("GET /networks/:networkCode/gateways", () => {
     const mockGateways: GatewayDTO[] = [
-      { macAddress: "mac1", name: "Gateway 1", description: "First gateway", networkCode: "net1" },
-      { macAddress: "mac2", name: "Gateway 2", description: "Second gateway", networkCode: "net2" }
+      { macAddress: "mac1", name: "Gateway 1", description: "First gateway" },
+      { macAddress: "mac2", name: "Gateway 2", description: "Second gateway" }
     ];
 
     it("should get all gateways (admin)", async () => {
@@ -67,7 +66,12 @@ describe("GatewayRoutes integration", () => {
     });
 
     it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
+    
       const response = await request(app).get("/api/v1/networks/test-network/gateways");
+    
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
     });
@@ -92,7 +96,6 @@ describe("GatewayRoutes integration", () => {
       macAddress: "test-mac-address",
       name: "Test Gateway",
       description: "A gateway for testing",
-      networkCode: "test-network"
     };
 
     it("should create gateway (admin)", async () => {
@@ -105,7 +108,7 @@ describe("GatewayRoutes integration", () => {
         .send(newGateway);
 
       expect(response.status).toBe(201);
-      expect(gatewayController.createGateway).toHaveBeenCalledWith(newGateway);
+      expect(gatewayController.createGateway).toHaveBeenCalledWith(newGateway,"test-network");
     });
 
     it("should create gateway (operator)", async () => {
@@ -134,6 +137,17 @@ describe("GatewayRoutes integration", () => {
       expect(response.body.message).toMatch(/Insufficient rights/);
     });
 
+    it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
+    
+      const response = await request(app).get("/api/v1/networks/test-network/gateways");
+    
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
+    });
+
     it("should return 404 for non-existent network", async () => {
       (authService.processToken as jest.Mock).mockResolvedValue(undefined);
       (gatewayController.createGateway as jest.Mock).mockImplementation(() => {
@@ -141,8 +155,9 @@ describe("GatewayRoutes integration", () => {
       });
 
       const response = await request(app)
-        .get("/api/v1/networks/non-existent/gateways")
-        .set("Authorization", token);
+        .post("/api/v1/networks/non-existent/gateways")
+        .set("Authorization", token)
+        .send(newGateway);
 
       expect(response.status).toBe(404);
       expect(response.body.message).toMatch(/not found/);
@@ -169,7 +184,6 @@ describe("GatewayRoutes integration", () => {
       macAddress: "test-mac-address",
       name: "Test Gateway",
       description: "A gateway for testing",
-      networkCode: "test-network"
     };
 
     it("should get specific gateway", async () => {
@@ -183,6 +197,17 @@ describe("GatewayRoutes integration", () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockGateway);
       expect(gatewayController.getGateway).toHaveBeenCalledWith("test-mac-address", "test-network");
+    });
+
+    it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
+    
+      const response = await request(app).get("/api/v1/networks/test-network/gateways");
+    
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
     });
 
     it("should return 404 for non-existent network", async () => {
@@ -267,6 +292,17 @@ describe("GatewayRoutes integration", () => {
       expect(response.body.message).toMatch(/Insufficient rights/);
     });
 
+    it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
+    
+      const response = await request(app).get("/api/v1/networks/test-network/gateways");
+    
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
+    });
+
     it("should return 404 for non-existent network", async () => {
       (authService.processToken as jest.Mock).mockResolvedValue(undefined);
       (gatewayController.updateGateway as jest.Mock).mockImplementation(() => {
@@ -332,6 +368,17 @@ describe("GatewayRoutes integration", () => {
 
       expect(response.status).toBe(403);
       expect(response.body.message).toMatch(/Insufficient rights/);
+    });
+
+    it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
+    
+      const response = await request(app).get("/api/v1/networks/test-network/gateways");
+    
+      expect(response.status).toBe(401);
+      expect(response.body.message).toMatch(/Unauthorized/);
     });
 
     it("should return 404 for non-existent network", async () => {

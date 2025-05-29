@@ -9,7 +9,7 @@ import {
   deleteGateway,
 } from "@controllers/gatewayController";
 import { authenticateUser } from "@middlewares/authMiddleware";
-import { GatewayFromJSON } from "@models/dto/Gateway";
+import { Gateway, GatewayFromJSON } from "@models/dto/Gateway";
 
 const router = Router({ mergeParams: true });
 
@@ -21,22 +21,33 @@ router.get("/",
     const gateways = await getAllGateways(req.params.networkCode);
     res.status(200).json(gateways);
   } catch (error) {
-    next(error);
+    if (error instanceof AppError) {
+      next(error);
+    } else {
+    next(new AppError("Internal server error", 500));    //da coprire
+    }
   }
 });
 
 // Create a new gateway (Admin & Operator)
 router.post("/",
             authenticateUser([UserType.Admin, UserType.Operator]), 
-            async (req, res, next) => {
+  async (req, res, next) => {
   try {
-    await createGateway(GatewayFromJSON(req.body), req.params.networkCode);
+    const gatewayDto = req.body as Gateway;
+    if (!gatewayDto.macAddress) {
+      throw new AppError("MacAddress is required", 400);
+    }
+    else if (!req.params.networkCode) {
+      throw new AppError("NetworkCode is required", 400);    //da coprire
+    }
+    await createGateway(gatewayDto, req.params.networkCode);
     res.status(201).send();
   } catch (error) {
     if (error instanceof AppError) {
-      res.status(error.status).json({ message: error.message });
-    } else {
       next(error);
+    } else {
+      next(new AppError("Internal server error", 500));   //da coprire
     }
   }
 });

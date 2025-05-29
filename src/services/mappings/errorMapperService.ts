@@ -29,15 +29,5 @@ export function mapUserDAOToDTO(userDAO: UserDAO): UserDTO {
   return createUserDTO(userDAO.username, userDAO.type);
 }
 
-/** Maps SensorDAO to SensorDTO */
-export function mapSensorDAOToDTO(sensorDAO: SensorDAO): SensorDTO {
-  return {
-    macAddress: sensorDAO.macAddress,
-    name: sensorDAO.name,
-    description: sensorDAO.description,
-    variable: sensorDAO.variable,
-    unit: sensorDAO.unit
-  };
-}
 
 
