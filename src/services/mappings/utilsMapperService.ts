@@ -14,7 +14,7 @@ export function removeNullAttributes<T>(dto: T): Partial<T> {
       ([_, value]) =>
         value !== null &&
         value !== undefined &&
-        (!Array.isArray(value) || value.length > 0)
+        (!Array.isArray(value) || value.length > 0) 
     )
   ) as Partial<T>;
 }

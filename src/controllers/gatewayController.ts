@@ -2,45 +2,105 @@ import { Gateway as GatewayDTO } from "@dto/Gateway";
 import { GatewayRepository } from "@repositories/GatewayRepository";
 import { NetworkRepository } from "@repositories/NetworkRepository";
 import { mapGatewayDAOToDTO } from "@services/mappings/gatewayMapperService";
-import { AppDataSource } from "@database";
-import { NetworkDAO } from "@dao/NetworkDAO";
 import AppError from "@models/errors/AppError";
-import { EntityNotFoundError } from "typeorm";
 
 export async function getAllGateways(networkCode: string): Promise<GatewayDTO[]> {
-  const gatewayRepo = new GatewayRepository();
-  return (await gatewayRepo.getAllGatewaysInNetwork(networkCode)).map(mapGatewayDAOToDTO);
+  try {
+    const gatewayRepo = new GatewayRepository();
+    return (await gatewayRepo.getAllGatewaysInNetwork(networkCode)).map(mapGatewayDAOToDTO);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Network with code")) {
+      throw new AppError(error.message, 404);
+    }
+    throw new AppError("Internal server error", 500);
+  }
 }
 
 export async function getGateway(macAddress: string, networkCode: string): Promise<GatewayDTO> {
-  const gatewayRepo = new GatewayRepository();
-  return mapGatewayDAOToDTO(await gatewayRepo.getGatewayByMacAddress(macAddress, networkCode));
+  try {
+    const gatewayRepo = new GatewayRepository();
+    return mapGatewayDAOToDTO(await gatewayRepo.getGatewayByMacAddress(macAddress, networkCode));
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes("Network with code")) {
+        throw new AppError(error.message, 404);
+      }
+      if (error.message.includes("Gateway with macAddress")) {
+        throw new AppError(error.message, 404);
+      }
+    }
+    throw new AppError("Internal server error", 500);
+  }
 }
 
 export async function createGateway(gatewayDto: GatewayDTO, networkCode: string): Promise<void> {
-  const gatewayRepo = new GatewayRepository();
-  const networkRepo = new NetworkRepository();
-  
+  if (!gatewayDto.macAddress) {
+    throw new AppError("MAC address is required", 400);
+  }
   try {
+    const networkRepo = new NetworkRepository();
     const network = await networkRepo.getNetworkByCode(networkCode);
-    await gatewayRepo.createGateway(gatewayDto.macAddress, gatewayDto.name, gatewayDto.description, network.code);
-  } catch (error) {
-    if (error instanceof AppError && error.message.includes('not found')) {
+    if (!network) {
       throw new AppError(`Network with code '${networkCode}' not found`, 404);
     }
-    if (error instanceof AppError && error.message.includes('already exists')) {
-      throw new AppError("Gateway with mac address '${gatewayDto.macAddress}' already exists", 409);
+    
+    const gatewayRepo = new GatewayRepository();
+    await gatewayRepo.createGateway(
+      gatewayDto.macAddress,
+      gatewayDto.name,
+      gatewayDto.description,
+      networkCode
+    );
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes("Network with code")) {
+        throw new AppError(error.message, 404);
+      }
+      if (error.message.includes("already exists")) {
+        throw new AppError(error.message, 409);
+      }
     }
-    throw new AppError("Failed to create gateway", 500);
+    throw new AppError("Internal server error", 500);
   }
 }
 
 export async function deleteGateway(macAddress: string, networkCode: string): Promise<void> {
-  const gatewayRepo = new GatewayRepository();
-  await gatewayRepo.deleteGateway(macAddress, networkCode);
+  try {
+    const gatewayRepo = new GatewayRepository();
+    await gatewayRepo.deleteGateway(macAddress, networkCode);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes("Network with code")) {
+        throw new AppError(error.message, 404);
+      }
+      if (error.message.includes("Gateway with macAddress")) {
+        throw new AppError(error.message, 404);
+      }
+    }
+    throw new AppError("Internal server error", 500);
+  }
 }
 
-export async function updateGateway(macAddress: string, networkCode: string, newValues: { newMacAddress?: string, newName?: string, newDescription?: string }): Promise<void> {
-  const gatewayRepo = new GatewayRepository();
-  await gatewayRepo.updateGateway(macAddress, networkCode, newValues);
+export async function updateGateway(
+  macAddress: string,
+  networkCode: string,
+  newValues: { newMacAddress?: string; newName?: string; newDescription?: string }
+): Promise<void> {
+  try {
+    const gatewayRepo = new GatewayRepository();
+    await gatewayRepo.updateGateway(macAddress, networkCode, newValues);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes("Network with code")) {
+        throw new AppError(error.message, 404);
+      }
+      if (error.message.includes("Gateway with macAddress") && error.message.includes("not found")) {
+        throw new AppError(error.message, 404);
+      }
+      if (error.message.includes("already exists")) {
+        throw new AppError(error.message, 409);
+      }
+    }
+    throw new AppError("Internal server error", 500);
+  }
 }

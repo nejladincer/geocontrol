@@ -13,12 +13,17 @@ export class GatewayDAO {
   @Column({ nullable: false })
   description: string;
 
-  // N Gateways : 1 Network
-  @ManyToOne(() => NetworkDAO, (network) => network.gateways, { cascade: true })
-  @JoinColumn({ name: "networkCode" })
+  @ManyToOne(() => NetworkDAO, network => network.gateways, {
+    onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "networkCode" }) // colonna FK esplicita
   network: NetworkDAO;
 
-  // 1 Gateway : N Sensors
-  @OneToMany(() => SensorDAO, (sensor) => sensor.gateway)
+  @Column()
+  networkCode: string;
+
+  @OneToMany(() => SensorDAO, sensor => sensor.gateway, {
+    cascade: true,
+  })
   sensors: SensorDAO[];
 }
