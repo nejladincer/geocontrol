@@ -11,6 +11,7 @@ import {
   getStatsFromSensorsInNetwork,
   getOutliersFromSensorsInNetwork
 } from "@controllers/measurementsController";
+import { CONFIG } from "@config";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ interface AuthenticatedRequest extends Request {
 
 // (4) Store a measurement for a sensor (Admin & Operator)
 router.post(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/measurements",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/measurements",
   authenticateUser([UserType.Admin, UserType.Operator]),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -43,7 +44,7 @@ router.post(
 
 // (5) GET measurements for a specific sensor (any authenticated user)
 router.get(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/measurements",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/measurements",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -66,7 +67,7 @@ router.get(
 
 // (6) GET statistics for a specific sensor (any authenticated user)
 router.get(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/stats",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/stats",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -89,7 +90,7 @@ router.get(
 
 // (7) GET outliers for a specific sensor (any authenticated user)
 router.get(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/outliers",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/outliers",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -112,7 +113,7 @@ router.get(
 
 // (1) GET measurements for sensors in a network (any authenticated user)
 router.get(
-  "/networks/:networkCode/measurements",
+  CONFIG.ROUTES.V1_NETWORKS + "/:networkCode/measurements",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -134,7 +135,7 @@ router.get(
 
 // (2) GET statistics for sensors in a network (any authenticated user)
 router.get(
-  "/networks/:networkCode/stats",
+  CONFIG.ROUTES.V1_NETWORKS + "/:networkCode/stats",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -156,7 +157,7 @@ router.get(
 
 // (3) GET outliers for sensors in a network (any authenticated user)
 router.get(
-  "/networks/:networkCode/outliers",
+  CONFIG.ROUTES.V1_NETWORKS + "/:networkCode/outliers",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {

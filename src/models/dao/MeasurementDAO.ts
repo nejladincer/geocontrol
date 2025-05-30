@@ -20,4 +20,7 @@ export class MeasurementDAO {
   @ManyToOne( () => SensorDAO, (sensor) => sensor.measurements, { cascade: true })
   @JoinColumn({ name: "sensorMacAddress" })
   sensor: SensorDAO;
+
+  @Column()
+  sensorMacAddress: string;
 }
