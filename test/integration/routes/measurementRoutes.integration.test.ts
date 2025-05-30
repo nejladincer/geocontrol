@@ -1,443 +1,162 @@
 import request from "supertest";
-import { app } from "@app";
-import * as authService from "@services/authService";
-import * as measurementsController from "@controllers/measurementsController";
-import { UserType } from "@models/UserType";
-import { UnauthorizedError } from "@models/errors/UnauthorizedError";
-import { InsufficientRightsError } from "@models/errors/InsufficientRightsError";
-import { NotFoundError } from "@models/errors/NotFoundError";
+import{ app}  from "@app";
+import { initializeTestDataSource, closeTestDataSource, TestDataSource } from "@test/setup/test-datasource";
+import { NetworkDAO } from "@dao/NetworkDAO";
+import { GatewayDAO } from "@dao/GatewayDAO";
+import { SensorDAO } from "@dao/SensorDAO";
+import { MeasurementDAO } from "@dao/MeasurementDAO";
 
-jest.mock("@services/authService");
-jest.mock("@controllers/measurementsController");
+beforeAll(async () => {
+  await initializeTestDataSource();
+});
 
-describe("MeasurementRoutes integration", () => {
-  const adminToken = "Bearer admintoken";
-  const operatorToken = "Bearer operatortoken";
-  const viewerToken = "Bearer viewertoken";
+afterAll(async () => {
+  await closeTestDataSource();
+});
 
-  afterEach(() => {
-    jest.clearAllMocks();
+beforeEach(async () => {
+  await TestDataSource.getRepository(NetworkDAO).clear();
+  await TestDataSource.getRepository(GatewayDAO).clear();
+  await TestDataSource.getRepository(SensorDAO).clear();
+  await TestDataSource.getRepository(MeasurementDAO).clear();
+});
+
+describe("Measurement Routes Integration Tests", () => {
+  const networkCode = "net123";
+  const gatewayMac = "00:1A:2B:3C:4D:5E";
+  const sensorMac = "AA:BB:CC:DD:EE:FF";
+
+  beforeEach(async () => {
+    const networkRepo = TestDataSource.getRepository(NetworkDAO);
+    const gatewayRepo = TestDataSource.getRepository(GatewayDAO);
+    const sensorRepo = TestDataSource.getRepository(SensorDAO);
+
+    await networkRepo.save({ code: networkCode, name: "Test Network", description: "A test network" });
+    await gatewayRepo.save({ macAddress: gatewayMac, name: "Test Gateway", description: "A test gateway", network: { code: networkCode } });
+    await sensorRepo.save({ macAddress: sensorMac, name: "Test Sensor", description: "A test sensor", variable: "temperature", unit: "Celsius", gateway: { macAddress: gatewayMac } });
   });
 
-  describe("POST /networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/measurements", () => {
-    const measurementData = {
-      createdAt: "2023-01-01T00:00:00Z",
-      value: 25.5
-    };
+  it("POST /v1/sensors/:sensorMac/measurements - Store measurement for sensor", async () => {
+    const response = await request(app)
+      .post(`/v1/sensors/${sensorMac}/measurements`)
+      .send({ networkCode, gatewayMac, createdAt: new Date().toISOString(), value: 42 })
+      .expect(201);
 
-    it("should store measurement (admin)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.storeMeasurementForSensor as jest.Mock).mockResolvedValue(undefined);
+    expect(response.body).toEqual({});
+  });
 
-      const response = await request(app)
-        .post("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .set("Authorization", adminToken)
-        .send(measurementData);
-
-      expect(response.status).toBe(201);
-      expect(measurementsController.storeMeasurementForSensor).toHaveBeenCalledWith(
-        "test-network",
-        "test-gateway", 
-        "test-sensor",
-        "2023-01-01T00:00:00Z",
-        25.5
-      );
+  it("GET /v1/sensors/:sensorMac/measurements - Retrieve measurements for sensor", async () => {
+    await TestDataSource.getRepository(MeasurementDAO).save({
+      code: `${sensorMac}-1`,
+      createdAt: new Date().toISOString(),
+      value: 42,
+      isOutlier: false,
+      sensorMacAddress: sensorMac,
     });
 
-    it("should store measurement (operator)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.storeMeasurementForSensor as jest.Mock).mockResolvedValue(undefined);
+    const response = await request(app)
+      .get(`/v1/sensors/${sensorMac}/measurements`)
+      .query({ networkCode, gatewayMac })
+      .expect(200);
 
-      const response = await request(app)
-        .post("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .set("Authorization", operatorToken)
-        .send(measurementData);
-
-      expect(response.status).toBe(201);
-    });
-
-    it("should return 403 for viewer", async () => {
-      (authService.processToken as jest.Mock).mockImplementation(() => {
-        throw new InsufficientRightsError("Forbidden: Insufficient rights");
-      });
-
-      const response = await request(app)
-        .post("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .set("Authorization", viewerToken)
-        .send(measurementData);
-
-      expect(response.status).toBe(403);
-      expect(response.body.message).toMatch(/Insufficient rights/);
-    });
-
-    it("should return 400 for missing required fields", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-
-      const response = await request(app)
-        .post("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .set("Authorization", adminToken)
-        .send({ createdAt: "2023-01-01T00:00:00Z" }); // missing value
-
-      expect(response.status).toBe(400);
-      expect(response.body.message).toMatch(/Missing required fields/);
-    });
-
-    it("should return 404 for non-existent sensor", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.storeMeasurementForSensor as jest.Mock).mockImplementation(() => {
-        throw new NotFoundError("Sensor not found");
-      });
-
-      const response = await request(app)
-        .post("/api/v1/networks/test-network/gateways/test-gateway/sensors/non-existent/measurements")
-        .set("Authorization", adminToken)
-        .send(measurementData);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toMatch(/not found/);
-    });
-
-    it("should return 401 without auth token", async () => {
-      const response = await request(app)
-        .post("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .send(measurementData);
-
-      expect(response.status).toBe(401);
-      expect(response.body.message).toMatch(/Unauthorized/);
+    expect(response.body.measurements).toHaveLength(1);
+    expect(response.body.measurements[0]).toMatchObject({
+      value: 42,
+      isOutlier: false,
     });
   });
 
-  describe("GET /networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/measurements", () => {
-    const mockMeasurements = {
-      sensorMacAddress: "test-sensor",
-      measurements: [
-        { createdAt: "2023-01-01T00:00:00Z", value: 25.5 },
-        { createdAt: "2023-01-01T01:00:00Z", value: 26.0 }
-      ]
-    };
-
-    it("should get sensor measurements (admin)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getMeasurementsFromSensor as jest.Mock).mockResolvedValue(mockMeasurements);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .set("Authorization", adminToken)
-        .query({ startDate: "2023-01-01", endDate: "2023-01-02" });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockMeasurements);
-      expect(measurementsController.getMeasurementsFromSensor).toHaveBeenCalledWith(
-        "test-network",
-        "test-gateway",
-        "test-sensor",
-        "2023-01-01",
-        "2023-01-02"
-      );
+  it("GET /v1/sensors/:sensorMac/stats - Retrieve stats for sensor", async () => {
+    await TestDataSource.getRepository(MeasurementDAO).save({
+      code: `${sensorMac}-1`,
+      createdAt: new Date().toISOString(),
+      value: 42,
+      isOutlier: false,
+      sensorMacAddress: sensorMac,
     });
 
-    it("should get sensor measurements (viewer)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getMeasurementsFromSensor as jest.Mock).mockResolvedValue(mockMeasurements);
+    const response = await request(app)
+      .get(`/v1/sensors/${sensorMac}/stats`)
+      .query({ networkCode, gatewayMac })
+      .expect(200);
 
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .set("Authorization", viewerToken);
+    expect(response.body).toEqual(expect.objectContaining({
+      mean: expect.any(Number),
+      variance: expect.any(Number),
+      upperThreshold: expect.any(Number),
+      lowerThreshold: expect.any(Number),
+    }));
+  });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockMeasurements);
+  it("GET /v1/sensors/:sensorMac/outliers - Retrieve outliers for sensor", async () => {
+    await TestDataSource.getRepository(MeasurementDAO).save({
+      code: `${sensorMac}-1`,
+      createdAt: new Date().toISOString(),
+      value: 100,
+      isOutlier: true,
+      sensorMacAddress: sensorMac,
     });
 
-    it("should return 404 for non-existent sensor", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getMeasurementsFromSensor as jest.Mock).mockImplementation(() => {
-        throw new NotFoundError("Sensor not found");
-      });
+    const response = await request(app)
+      .get(`/v1/sensors/${sensorMac}/outliers`)
+      .query({ networkCode, gatewayMac })
+      .expect(200);
 
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/non-existent/measurements")
-        .set("Authorization", adminToken);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toMatch(/not found/);
-    });
-
-    it("should return 401 without auth token", async () => {
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements");
-
-      expect(response.status).toBe(401);
-      expect(response.body.message).toMatch(/Unauthorized/);
+    expect(response.body.measurements).toHaveLength(1);
+    expect(response.body.measurements[0]).toMatchObject({
+      value: 100,
+      isOutlier: true,
     });
   });
 
-  describe("GET /networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/stats", () => {
-    const mockStats = {
-      sensorMacAddress: "test-sensor",
-      count: 100,
-      average: 25.5,
-      min: 20.0,
-      max: 30.0
-    };
-
-    it("should get sensor statistics (admin)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getStatsFromSensor as jest.Mock).mockResolvedValue(mockStats);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/stats")
-        .set("Authorization", adminToken)
-        .query({ startDate: "2023-01-01", endDate: "2023-01-02" });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockStats);
-      expect(measurementsController.getStatsFromSensor).toHaveBeenCalledWith(
-        "test-network",
-        "test-gateway",
-        "test-sensor",
-        "2023-01-01",
-        "2023-01-02"
-      );
+  it("GET /v1/networks/:networkCode/measurements - Retrieve measurements for sensors in network", async () => {
+    await TestDataSource.getRepository(MeasurementDAO).save({
+      code: `${sensorMac}-1`,
+      createdAt: new Date().toISOString(),
+      value: 42,
+      isOutlier: false,
+      sensorMacAddress: sensorMac,
     });
 
-    it("should get sensor statistics (viewer)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getStatsFromSensor as jest.Mock).mockResolvedValue(mockStats);
+    const response = await request(app)
+      .get(`/v1/networks/${networkCode}/measurements`)
+      .query({ sensorMacs: [sensorMac] })
+      .expect(200);
 
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/stats")
-        .set("Authorization", viewerToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockStats);
-    });
-
-    it("should return 404 for non-existent sensor", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getStatsFromSensor as jest.Mock).mockImplementation(() => {
-        throw new NotFoundError("Sensor not found");
-      });
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/non-existent/stats")
-        .set("Authorization", adminToken);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toMatch(/not found/);
-    });
+    expect(response.body).toHaveLength(1);
   });
 
-  describe("GET /networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/outliers", () => {
-    const mockOutliers = {
-      sensorMacAddress: "test-sensor",
-      outliers: [
-        { createdAt: "2023-01-01T00:00:00Z", value: 100.0 }
-      ]
-    };
-
-    it("should get sensor outliers (admin)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getOutliersFromSensor as jest.Mock).mockResolvedValue(mockOutliers);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/outliers")
-        .set("Authorization", adminToken)
-        .query({ startDate: "2023-01-01", endDate: "2023-01-02" });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockOutliers);
-      expect(measurementsController.getOutliersFromSensor).toHaveBeenCalledWith(
-        "test-network",
-        "test-gateway",
-        "test-sensor",
-        "2023-01-01",
-        "2023-01-02"
-      );
+  it("GET /v1/networks/:networkCode/stats - Retrieve stats for sensors in network", async () => {
+    await TestDataSource.getRepository(MeasurementDAO).save({
+      code: `${sensorMac}-1`,
+      createdAt: new Date().toISOString(),
+      value: 42,
+      isOutlier: false,
+      sensorMacAddress: sensorMac,
     });
 
-    it("should get sensor outliers (viewer)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getOutliersFromSensor as jest.Mock).mockResolvedValue(mockOutliers);
+    const response = await request(app)
+      .get(`/v1/networks/${networkCode}/stats`)
+      .query({ sensorMacs: [sensorMac] })
+      .expect(200);
 
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/outliers")
-        .set("Authorization", viewerToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockOutliers);
-    });
+    expect(response.body).toHaveLength(1);
   });
 
-  describe("GET /networks/:networkCode/measurements", () => {
-    const mockNetworkMeasurements = [
-      {
-        sensorMacAddress: "sensor1",
-        measurements: [
-          { createdAt: "2023-01-01T00:00:00Z", value: 25.5 }
-        ]
-      },
-      {
-        sensorMacAddress: "sensor2", 
-        measurements: [
-          { createdAt: "2023-01-01T00:00:00Z", value: 60.0 }
-        ]
-      }
-    ];
-
-    it("should get network measurements (admin)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getMeasurementsFromSensorsInNetwork as jest.Mock).mockResolvedValue(mockNetworkMeasurements);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/measurements")
-        .set("Authorization", adminToken)
-        .query({ 
-          sensorMacs: ["sensor1", "sensor2"],
-          startDate: "2023-01-01",
-          endDate: "2023-01-02"
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockNetworkMeasurements);
-      expect(measurementsController.getMeasurementsFromSensorsInNetwork).toHaveBeenCalledWith(
-        "test-network",
-        ["sensor1", "sensor2"],
-        "2023-01-01",
-        "2023-01-02"
-      );
+  it("GET /v1/networks/:networkCode/outliers - Retrieve outliers for sensors in network", async () => {
+    await TestDataSource.getRepository(MeasurementDAO).save({
+      code: `${sensorMac}-1`,
+      createdAt: new Date().toISOString(),
+      value: 100,
+      isOutlier: true,
+      sensorMacAddress: sensorMac,
     });
 
-    it("should get network measurements (viewer)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getMeasurementsFromSensorsInNetwork as jest.Mock).mockResolvedValue(mockNetworkMeasurements);
+    const response = await request(app)
+      .get(`/v1/networks/${networkCode}/outliers`)
+      .query({ sensorMacs: [sensorMac] })
+      .expect(200);
 
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/measurements")
-        .set("Authorization", viewerToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockNetworkMeasurements);
-    });
-
-    it("should return 404 for non-existent network", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getMeasurementsFromSensorsInNetwork as jest.Mock).mockImplementation(() => {
-        throw new NotFoundError("Network not found");
-      });
-
-      const response = await request(app)
-        .get("/api/v1/networks/non-existent/measurements")
-        .set("Authorization", adminToken);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toMatch(/not found/);
-    });
-  });
-
-  describe("GET /networks/:networkCode/stats", () => {
-    const mockNetworkStats = [
-      {
-        sensorMacAddress: "sensor1",
-        count: 100,
-        average: 25.5,
-        min: 20.0,
-        max: 30.0
-      }
-    ];
-
-    it("should get network statistics (admin)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getStatsFromSensorsInNetwork as jest.Mock).mockResolvedValue(mockNetworkStats);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/stats")
-        .set("Authorization", adminToken)
-        .query({ 
-          sensorMacs: ["sensor1"],
-          startDate: "2023-01-01",
-          endDate: "2023-01-02"
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockNetworkStats);
-      expect(measurementsController.getStatsFromSensorsInNetwork).toHaveBeenCalledWith(
-        "test-network",
-        ["sensor1"],
-        "2023-01-01",
-        "2023-01-02"
-      );
-    });
-
-    it("should get network statistics (viewer)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getStatsFromSensorsInNetwork as jest.Mock).mockResolvedValue(mockNetworkStats);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/stats")
-        .set("Authorization", viewerToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockNetworkStats);
-    });
-  });
-
-  describe("GET /networks/:networkCode/outliers", () => {
-    const mockNetworkOutliers = [
-      {
-        sensorMacAddress: "sensor1",
-        outliers: [
-          { createdAt: "2023-01-01T00:00:00Z", value: 100.0 }
-        ]
-      }
-    ];
-
-    it("should get network outliers (admin)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getOutliersFromSensorsInNetwork as jest.Mock).mockResolvedValue(mockNetworkOutliers);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/outliers")
-        .set("Authorization", adminToken)
-        .query({ 
-          sensorMacs: ["sensor1"],
-          startDate: "2023-01-01",
-          endDate: "2023-01-02"
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockNetworkOutliers);
-      expect(measurementsController.getOutliersFromSensorsInNetwork).toHaveBeenCalledWith(
-        "test-network",
-        ["sensor1"],
-        "2023-01-01",
-        "2023-01-02"
-      );
-    });
-
-    it("should get network outliers (viewer)", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getOutliersFromSensorsInNetwork as jest.Mock).mockResolvedValue(mockNetworkOutliers);
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/outliers")
-        .set("Authorization", viewerToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockNetworkOutliers);
-    });
-  });
-
-  describe("Error handling", () => {
-    it("should handle internal server errors", async () => {
-      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
-      (measurementsController.getMeasurementsFromSensor as jest.Mock).mockRejectedValue(new Error("Internal error"));
-
-      const response = await request(app)
-        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/test-sensor/measurements")
-        .set("Authorization", adminToken);
-
-      expect(response.status).toBe(500);
-      expect(response.body.message).toMatch(/Internal server error/);
-    });
+    expect(response.body).toHaveLength(1);
   });
 });

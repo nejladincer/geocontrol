@@ -13,7 +13,6 @@ export class GatewayRepository {
   }
 
   async getAllGatewaysInNetwork(code: string): Promise<GatewayDAO[]> {
-    // First check if network exists
     const network = await AppDataSource.getRepository(NetworkDAO).findOne({
       where: { code }
     });
@@ -44,7 +43,6 @@ export class GatewayRepository {
     macAddress: string,
     name: string,
     description: string,
-    //sensors: SensorDAO[],
     networkCode: string
   ): Promise<GatewayDAO> {
     throwConflictIfFound(
@@ -57,7 +55,6 @@ export class GatewayRepository {
       macAddress: macAddress,
       name: name,
       description: description,
-      //sensors: sensors,
       network: { code: networkCode }
     });
   }
@@ -74,7 +71,6 @@ export class GatewayRepository {
       newName?: string,
       newDescription?: string
     }): Promise<GatewayDAO> {
-      // Obtain existing gateway by macAddress
     const targetGateway = await this.getGatewayByMacAddress(macAddress, networkCode);
   
     if (newValues.newMacAddress && newValues.newMacAddress !== macAddress) {
@@ -87,7 +83,6 @@ export class GatewayRepository {
       targetGateway.macAddress = newValues.newMacAddress;
     }
   
-    // Update other fields if provided
     if (newValues.newName !== undefined) {
       targetGateway.name = newValues.newName;
     }
@@ -96,7 +91,6 @@ export class GatewayRepository {
       targetGateway.description = newValues.newDescription;
     }
   
-    // Save the updated gateway
     return this.repo.save(targetGateway);
   }
 }

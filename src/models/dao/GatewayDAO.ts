@@ -16,7 +16,7 @@ export class GatewayDAO {
   @ManyToOne(() => NetworkDAO, network => network.gateways, {
     onDelete: "CASCADE",
   })
-  @JoinColumn({ name: "networkCode" }) // colonna FK esplicita
+  @JoinColumn({ name: "networkCode" })
   network: NetworkDAO;
 
   @Column()

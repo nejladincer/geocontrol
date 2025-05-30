@@ -15,36 +15,46 @@ export async function calculateStats(
   measurements: any[],
   startDate?: string,
   endDate?: string,
-  ) : Promise<Stats> {
+): Promise<Stats> {
+  let startDateISO, endDateISO;
 
-    let startDateISO, endDateISO;
+  // Validate start and end dates
+  if (!startDate) {
+    startDateISO = new Date(0).toISOString(); // Start of time
+  } else if (!endDate) {
+    endDateISO = new Date().toISOString(); // Current time
+  }
 
-    // Validate start and end dates
-    if (!startDate) {
-      startDateISO = new Date(0).toISOString(); // Start of time
-    } else if (!endDate) {
-      endDateISO = new Date().toISOString(); // Current time
-    }
-
-    // Calculate stats from measurements
-    const mean = measurements.reduce( (sum, m) => sum + m ) / measurements.length;
-
-    let variance = 0;
-    measurements.forEach( (m) => variance += (m - mean)**2 );
-    variance /= measurements.length;
-
-    const stdDev = Math.sqrt(variance);
-
-    const upperThreshold = mean + 2*stdDev;
-    const lowerThreshold = mean - 2*stdDev;
-
-    return <Stats> {
-      startDate: isoToDate(startDateISO),
-      endDate: isoToDate(endDateISO),
-      mean: mean,
-      variance: variance,
-      upperThreshold: upperThreshold,
-      lowerThreshold: lowerThreshold
+  // Handle empty measurements array
+  if (measurements.length === 0) {
+    return <Stats>{
+      startDate: startDateISO,
+      endDate: endDateISO,
+      mean: 0,
+      variance: 0,
+      upperThreshold: 0,
+      lowerThreshold: 0,
     };
+  }
 
+  // Calculate stats from measurements
+  const mean = measurements.reduce((sum, m) => sum + m, 0) / measurements.length;
+
+  let variance = 0;
+  measurements.forEach((m) => (variance += (m - mean) ** 2));
+  variance /= measurements.length;
+
+  const stdDev = Math.sqrt(variance);
+
+  const upperThreshold = mean + 2 * stdDev;
+  const lowerThreshold = mean - 2 * stdDev;
+
+  return <Stats>{
+    startDate: startDateISO,
+    endDate: endDateISO,
+    mean: mean,
+    variance: variance,
+    upperThreshold: upperThreshold,
+    lowerThreshold: lowerThreshold,
+  };
 }

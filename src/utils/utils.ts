@@ -53,7 +53,7 @@ export function parseStringArrayParam(param?: unknown): string[] | undefined {
 
 /* VALIDATION FUNCTIONS */
 function validName(name: string): boolean {
-  const regexp = new RegExp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
+  const regexp = /^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/;
   if (!regexp.test(name)) {
     return false;
   }

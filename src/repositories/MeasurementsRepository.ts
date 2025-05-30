@@ -17,6 +17,10 @@ import { Stats } from "@models/dto/Stats";
 import { calculateStats } from "@utils/statsUtils";
 import { Sensor } from "@models/dto/Sensor";
 import AppError from "@models/errors/AppError";
+import { SensorRepository } from "@repositories/SensorRepository";
+import { SensorDAO } from "@models/dao/SensorDAO";
+import { GatewayRepository } from "./GatewayRepository";
+import { log } from "console";
 
 export class MeasurementsRepository {
   private repo: Repository<MeasurementDAO>;
@@ -69,15 +73,24 @@ export class MeasurementsRepository {
   ): Promise<Measurements[]> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
-    let sensorMacsArray: string[] = [];
+    let sensorMacsArray: Sensor[] = [];
     if (!sensorMacs || sensorMacs.length === 0) {
       // If no sensor MACs are provided, get all sensors for the network
-      sensorMacsArray =  (await getAllSensorsInNetwork(networkCode)).map(s => s.macAddress);
+      sensorMacsArray = await getAllSensorsInNetwork(networkCode);
     }
-   
     let measurementsArray: Measurements[] = [];
-    sensorMacs.forEach( async (m) => {
-      measurementsArray.push( await this.getMeasurementsFromSensor(networkCode, m, startDateISO, endDateISO) ); 
+    const sensorRepository = AppDataSource.getRepository(SensorDAO);
+
+    sensorMacs.map( async (m) => {
+      let targetSensor = await sensorRepository.findOne({
+        where: { macAddress: m, gateway: { network: { code: networkCode } } },
+        relations: ["gateway"]
+      });
+      log("Target sensor: ", targetSensor);
+      if (!targetSensor) {
+        throw new AppError(`Sensor with MAC ${m} not found in network ${networkCode}`, 404);
+      }
+      measurementsArray.push( await this.getMeasurementsFromSensor(networkCode, targetSensor.gatewayMac, targetSensor.macAddress  , startDateISO, endDateISO) ); 
     });
 
    return <Measurements[]> measurementsArray;
@@ -114,22 +127,18 @@ export class MeasurementsRepository {
   
     // Validate inputs
     validateNetworkCode(networkCode);
-    sensorMacs.forEach((mac) => validateSensorMac(mac));
 
-    let outlierMeasurementsArray: Measurements[] = [];
-
-    sensorMacs.forEach( async (s) => {
-      const currentSensorMeasurements: Measurements = await this.getMeasurementsFromSensor(networkCode, s, startDateISO, endDateISO);
-      const outlierMeasurements: Measurement[] = currentSensorMeasurements.measurements.filter(m => m.isOutlier === true);
-
-      const newSensorMeasurement: Measurements = {
-        sensorMacAddress: s,
-        stats: currentSensorMeasurements.stats,
+    // Retrieve measurements for the sensors in the network
+    const sensorMeasurements: Measurements[] = await this.getMeasurementsFromSensorsInNetwork(networkCode, sensorMacs, startDateISO, endDateISO);
+    // Filter out the measurements that are outliers
+    const outlierMeasurementsArray: Measurements[] = sensorMeasurements.map((m) => {
+      const outlierMeasurements: Measurement[] = m.measurements.filter(measurement => measurement.isOutlier === true);
+      return {
+        sensorMacAddress: m.sensorMacAddress,
+        stats: m.stats,
         measurements: outlierMeasurements
       };
-
-      outlierMeasurementsArray.push(newSensorMeasurement);
-    });
+    }); 
 
     return <Measurements[]> outlierMeasurementsArray;
   }
@@ -146,73 +155,38 @@ export class MeasurementsRepository {
     sensorMac: string,
     createdAt: string, 
     value: number
-  ) : Promise<void> {
-
-    console.log("ENTRATO");
-
-
-    // Validation 
-    
+  ): Promise<void> {
+    // Validation
     validateNetworkCode(networkCode);
-    console.log("NETWORK OK");
-
     validateGatewayMac(gatewayMac);
-    console.log("GATEWAY OK");
-
     validateSensorMac(sensorMac);
-    console.log("SENSOR OK");
+
+    // Retrieve the sensor to ensure it exists and set the foreign key relationship
+    const sensorRepo = new SensorRepository();
+    const sensor = await sensorRepo.getSensorByMacAddress(sensorMac, gatewayMac);
     
     // Create a new MeasurementDAO object
     const newMeasurementToInsert: MeasurementDAO = new MeasurementDAO();
-    
-    console.log("MEASUREMENT DAO CREATOOO");
-
-
-    // const sensor = await getSensor(networkCode, gatewayMac, sensorMac);
-    
-    console.log("CIAONE1");
-
-
-    // Retrieve existing measurements for the sensor
-    const oldSensorMeasurements: Measurements = await this.getMeasurementsFromSensor(networkCode, gatewayMac, sensorMac);
-    
-    console.log("CIAONE1.5");
-
 
     // Create new sensor measurements to then calculate new statistics on it
     const newSensorMeasurements: Measurements = {
       sensorMacAddress: sensorMac,
-      stats: oldSensorMeasurements.stats,
-      measurements: [...oldSensorMeasurements.measurements, {
+      stats: { startDate: new Date(0), endDate: new Date(), mean: 0, variance: 0, upperThreshold: 0, lowerThreshold: 0 },
+      measurements: [{
         createdAt: new Date(createdAt),
         value: value,
         isOutlier: false // Default value, will be updated before saving
       }]
     };
 
-    console.log("CIAONE2");
-
-
-    // Calculate stats for the new measurements 
-    const newStats: Stats = await calculateStats(newSensorMeasurements.measurements, oldSensorMeasurements.stats.startDate.toISOString(), oldSensorMeasurements.stats.endDate.toISOString());
-
-    // Calculate and set isOutlier field based on new statistics
-    const isOutlier = (value > newStats.upperThreshold || value < newStats.lowerThreshold);
-    newSensorMeasurements.measurements[newSensorMeasurements.measurements.length - 1].isOutlier = isOutlier;
-    
-    console.log("CIAONE3");
-
-
     newMeasurementToInsert.code = sensorMac + "-" + new Date(createdAt).getTime(); // Unique code for the measurement
     newMeasurementToInsert.createdAt = createdAt;
     newMeasurementToInsert.value = value;
-    newMeasurementToInsert.isOutlier = isOutlier; // Store the calculated isOutlier value in the DAO
+    newMeasurementToInsert.isOutlier = null; // Store the calculated isOutlier value in the DAO
+    newMeasurementToInsert.sensorMacAddress = sensorMac; // Ensure sensorMacAddress is set
+    newMeasurementToInsert.sensor = sensor; // Set the sensor relationship
 
-
-    this.repo.save(newMeasurementToInsert);
-
-
-    console.log("CIAONE DOPO");
+    await this.repo.save(newMeasurementToInsert);
   }
 
   // [DONE]
@@ -243,10 +217,12 @@ export class MeasurementsRepository {
       },
 
       where: {
+        sensorMacAddress: sensorMac,
         createdAt: And(MoreThanOrEqual(startDateISO), LessThanOrEqual(endDateISO))
       },
 
       select: {
+        code: true,
         createdAt: true,
         value: true,
         isOutlier: true
