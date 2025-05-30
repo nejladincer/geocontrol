@@ -89,6 +89,18 @@ describe("SensorRoutes integration", () => {
       expect(res.body.message).toMatch(/not found/);
 
     });
+    it("should return 500 on unknown error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (sensorController.getAllSensors as jest.Mock).mockImplementation(() => {
+        throw new Error("Unexpected error");
+      });
+      const res = await request(app)
+        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors")
+        .set("Authorization", adminToken);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe("Internal server error");
+    });
   });
 
   describe("POST /networks/:networkCode/gateways/:gatewayMac/sensors", () => {
@@ -156,6 +168,21 @@ describe("SensorRoutes integration", () => {
           expect(res.body.message).toMatch(/not found/);
         });
 
+        it("should return 500 on unknown error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (sensorController.createSensor as jest.Mock).mockImplementation(() => {
+        throw new Error("Unexpected error");
+      });
+
+      const res = await request(app)
+        .post("/api/v1/networks/test-network/gateways/test-gateway/sensors")
+        .set("Authorization", adminToken)
+        .send(newSensor);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe("Internal server error");
+    });
+
     it("should return 409 for duplicate sensor", async () => {
       (authService.processToken as jest.Mock).mockResolvedValue(undefined);
       (sensorController.createSensor as jest.Mock).mockImplementation(() => {
@@ -204,6 +231,20 @@ describe("SensorRoutes integration", () => {
     expect(res.status).toBe(404);
     expect(res.body.message).toMatch(/not found/);
   });
+
+  it("should return 500 on unknown error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (sensorController.getSensor as jest.Mock).mockImplementation(() => {
+        throw new Error("Unexpected error");
+      });
+
+      const res = await request(app)
+        .get("/api/v1/networks/test-network/gateways/test-gateway/sensors/sensor1")
+        .set("Authorization", adminToken);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe("Internal server error");
+    });
 });
 
 
@@ -254,6 +295,20 @@ describe("SensorRoutes integration", () => {
 
       expect(res.status).toBe(404);
     });
+    it("should return 500 on unknown error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (sensorController.updateSensor as jest.Mock).mockImplementation(() => {
+        throw new Error("Unexpected error");
+      });
+
+      const res = await request(app)
+        .patch("/api/v1/networks/test-network/gateways/test-gateway/sensors/sensor1")
+        .set("Authorization", adminToken)
+        .send(updateData);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe("Internal server error");
+    });
   });
 
   describe("DELETE /networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac", () => {
@@ -295,6 +350,19 @@ describe("SensorRoutes integration", () => {
       expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/not found/);
 
+    });
+    it("should return 500 on unknown error", async () => {
+      (authService.processToken as jest.Mock).mockResolvedValue(undefined);
+      (sensorController.deleteSensor as jest.Mock).mockImplementation(() => {
+        throw new Error("Unexpected error");
+      });
+
+      const res = await request(app)
+        .delete("/api/v1/networks/test-network/gateways/test-gateway/sensors/sensor1")
+        .set("Authorization", adminToken);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe("Internal server error");
     });
   });
 });
