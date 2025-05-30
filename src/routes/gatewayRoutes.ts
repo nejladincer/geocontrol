@@ -8,12 +8,11 @@ import {
   updateGateway, 
   deleteGateway,
 } from "@controllers/gatewayController";
-import { authenticateUser } from "@middlewares/authMiddleware";
+import { AuthenticatedRequest, authenticateUser } from "@middlewares/authMiddleware";
 import { Gateway, GatewayFromJSON } from "@models/dto/Gateway";
 
 const router = Router({ mergeParams: true });
 
-// Get all gateways (Any authenticated user)
 router.get("/", 
            authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]), 
            async (req, res, next) => {
@@ -24,22 +23,21 @@ router.get("/",
     if (error instanceof AppError) {
       next(error);
     } else {
-    next(new AppError("Internal server error", 500));    //da coprire
+    next(new AppError("Internal server error", 500));   
     }
   }
 });
 
-// Create a new gateway (Admin & Operator)
 router.post("/",
             authenticateUser([UserType.Admin, UserType.Operator]), 
-  async (req, res, next) => {
+            async (req: AuthenticatedRequest, res, next) => {
   try {
     const gatewayDto = req.body as Gateway;
     if (!gatewayDto.macAddress) {
       throw new AppError("MacAddress is required", 400);
     }
     else if (!req.params.networkCode) {
-      throw new AppError("NetworkCode is required", 400);    //da coprire
+      throw new AppError("NetworkCode is required", 400);   
     }
     await createGateway(gatewayDto, req.params.networkCode);
     res.status(201).send();
@@ -47,7 +45,7 @@ router.post("/",
     if (error instanceof AppError) {
       next(error);
     } else {
-      next(new AppError("Internal server error", 500));   //da coprire
+      next(new AppError("Internal server error", 500));  
     }
   }
 });
@@ -70,12 +68,13 @@ router.get("/:macAddress",
 router.patch(
   "/:macAddress",
   authenticateUser([UserType.Admin, UserType.Operator]),
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
+      const { macAddress, name, description } = req.body;
       const newValues = {
-        newMacAddress: req.body.macAddress,
-        newName: req.body.name,
-        newDescription: req.body.description
+        newMacAddress: macAddress,
+        newName: name,
+        newDescription: description
       };
       await updateGateway(req.params.macAddress, req.params.networkCode, newValues);
       res.status(204).send();
@@ -89,7 +88,7 @@ router.patch(
 router.delete(
   "/:macAddress",
   authenticateUser([UserType.Admin, UserType.Operator]),
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
       await deleteGateway(req.params.macAddress, req.params.networkCode);
       res.status(204).send();

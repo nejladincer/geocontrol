@@ -19,7 +19,7 @@ describe("SensorController integration", () => {
     description: "Test gateway",
     network: {} as NetworkDAO,
     networkCode: networkCode,
-    sensors: [] // Required field
+    sensors: []
   };
 
   const fakeSensors: SensorDAO[] = [
