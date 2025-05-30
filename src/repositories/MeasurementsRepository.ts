@@ -73,27 +73,33 @@ export class MeasurementsRepository {
   ): Promise<Measurements[]> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
-    let sensorMacsArray: Sensor[] = [];
+    // If no sensor MACs are provided, get all sensors for the network
     if (!sensorMacs || sensorMacs.length === 0) {
-      // If no sensor MACs are provided, get all sensors for the network
-      sensorMacsArray = await getAllSensorsInNetwork(networkCode);
+      const allSensors = await getAllSensorsInNetwork(networkCode);
+      sensorMacs = allSensors.map(sensor => sensor.macAddress);
     }
-    let measurementsArray: Measurements[] = [];
-    const sensorRepository = AppDataSource.getRepository(SensorDAO);
 
-    sensorMacs.map( async (m) => {
-      let targetSensor = await sensorRepository.findOne({
-        where: { macAddress: m, gateway: { network: { code: networkCode } } },
+    const sensorRepository = AppDataSource.getRepository(SensorDAO);
+    const measurementsPromises = sensorMacs.map(async (macAddress) => {
+      const targetSensor = await sensorRepository.findOne({
+        where: { macAddress: macAddress, gateway: { network: { code: networkCode } } },
         relations: ["gateway"]
       });
-      log("Target sensor: ", targetSensor);
+
       if (!targetSensor) {
-        throw new AppError(`Sensor with MAC ${m} not found in network ${networkCode}`, 404);
+        throw new AppError(`Sensor with MAC ${macAddress} not found in network ${networkCode}`, 404);
       }
-      measurementsArray.push( await this.getMeasurementsFromSensor(networkCode, targetSensor.gatewayMac, targetSensor.macAddress  , startDateISO, endDateISO) ); 
+
+      return this.getMeasurementsFromSensor(
+        networkCode,
+        targetSensor.gatewayMac,
+        targetSensor.macAddress,
+        startDateISO,
+        endDateISO
+      );
     });
 
-   return <Measurements[]> measurementsArray;
+    return Promise.all(measurementsPromises);
   }
 
   // [DONE]
@@ -181,12 +187,12 @@ export class MeasurementsRepository {
 
     newMeasurementToInsert.code = sensorMac + "-" + new Date(createdAt).getTime(); // Unique code for the measurement
     newMeasurementToInsert.createdAt = createdAt;
-    newMeasurementToInsert.value = value;
+    newMeasurementToInsert.value = value; // Set the value field
     newMeasurementToInsert.isOutlier = null; // Store the calculated isOutlier value in the DAO
     newMeasurementToInsert.sensorMacAddress = sensorMac; // Ensure sensorMacAddress is set
     newMeasurementToInsert.sensor = sensor; // Set the sensor relationship
 
-    let pippo = await this.repo.save(newMeasurementToInsert);
+    await this.repo.save(newMeasurementToInsert);
   }
 
   // [DONE]
