@@ -11,6 +11,7 @@ import {
   getStatsFromSensorsInNetwork,
   getOutliersFromSensorsInNetwork
 } from "@controllers/measurementsController";
+import { CONFIG } from "@config";
 
 const router = Router();
 
@@ -22,18 +23,29 @@ interface AuthenticatedRequest extends Request {
 
 // (4) Store a measurement for a sensor (Admin & Operator)
 router.post(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/measurements",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/measurements",
   authenticateUser([UserType.Admin, UserType.Operator]),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { networkCode, gatewayMac, sensorMac } = req.params;
-      const { createdAt, value } = req.body;
+      const measurements = req.body;
       
-      if (!createdAt || !value) {
-        throw new AppError("Missing required fields", 400);
+      if (!Array.isArray(measurements)) {
+        throw new AppError("Request body must be an array of measurements", 400);
       }
 
-      await storeMeasurementForSensor(networkCode, gatewayMac, sensorMac, createdAt, value);
+      if (measurements.length === 0) {
+        throw new AppError("Measurements array cannot be empty", 400);
+      }
+
+      for (const measurement of measurements) {
+        const { createdAt, value } = measurement;
+        if (!createdAt || value === undefined) {
+          throw new AppError("Each measurement must have createdAt and value fields", 400);
+        }
+        await storeMeasurementForSensor(networkCode, gatewayMac, sensorMac, createdAt, value);
+      }
+
       res.status(201).send();
     } catch (error) {
       next(error instanceof AppError ? error : new AppError("Internal server error", 500));
@@ -43,7 +55,7 @@ router.post(
 
 // (5) GET measurements for a specific sensor (any authenticated user)
 router.get(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/measurements",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/measurements",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -66,7 +78,7 @@ router.get(
 
 // (6) GET statistics for a specific sensor (any authenticated user)
 router.get(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/stats",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/stats",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -89,7 +101,7 @@ router.get(
 
 // (7) GET outliers for a specific sensor (any authenticated user)
 router.get(
-  "/networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac/outliers",
+  CONFIG.ROUTES.V1_SENSORS + "/:sensorMac/outliers",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -112,7 +124,7 @@ router.get(
 
 // (1) GET measurements for sensors in a network (any authenticated user)
 router.get(
-  "/networks/:networkCode/measurements",
+  CONFIG.ROUTES.V1_NETWORKS + "/:networkCode/measurements",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -134,7 +146,7 @@ router.get(
 
 // (2) GET statistics for sensors in a network (any authenticated user)
 router.get(
-  "/networks/:networkCode/stats",
+  CONFIG.ROUTES.V1_NETWORKS + "/:networkCode/stats",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {
@@ -156,7 +168,7 @@ router.get(
 
 // (3) GET outliers for sensors in a network (any authenticated user)
 router.get(
-  "/networks/:networkCode/outliers",
+  CONFIG.ROUTES.V1_NETWORKS + "/:networkCode/outliers",
   authenticateUser([UserType.Admin, UserType.Operator, UserType.Viewer]),
   async (req, res, next) => {
     try {

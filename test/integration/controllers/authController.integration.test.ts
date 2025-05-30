@@ -3,7 +3,6 @@ import { UserRepository } from "@repositories/UserRepository";
 import { UnauthorizedError } from "@errors/UnauthorizedError";
 import { UserType } from "@models/UserType";
 
-// Mock dependencies
 jest.mock("@repositories/UserRepository");
 
 describe("getToken", () => {
