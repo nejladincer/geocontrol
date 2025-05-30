@@ -66,12 +66,13 @@ describe("SensorRoutes integration", () => {
     });
 
     it("should return 401 if token is missing", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
       const res = await request(app)
         .get("/api/v1/networks/test-network/gateways/test-gateway/sensors");
-
       expect(res.status).toBe(401);
       expect(res.body.message).toMatch(/Unauthorized/);
-
     });
 
     it("should return 404 if gateway not found", async () => {

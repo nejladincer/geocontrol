@@ -66,6 +66,9 @@ describe("NetworkRoutes integration", () => {
     });
 
     it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
       const response = await request(app).get("/api/v1/networks");
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
@@ -176,10 +179,12 @@ describe("NetworkRoutes integration", () => {
     });
 
     it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
       const response = await request(app)
         .post("/api/v1/networks")
         .send(newNetwork);
-
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
     });
@@ -232,9 +237,11 @@ describe("NetworkRoutes integration", () => {
     });
 
     it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
       const response = await request(app)
         .get("/api/v1/networks/test-net");
-
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
     });
@@ -314,10 +321,12 @@ describe("NetworkRoutes integration", () => {
     });
 
     it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
       const response = await request(app)
         .patch("/api/v1/networks/test-net")
         .send(updateData);
-
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
     });
@@ -387,9 +396,11 @@ describe("NetworkRoutes integration", () => {
     });
 
     it("should return 401 without auth token", async () => {
+      (authService.processToken as jest.Mock).mockImplementation(() => {
+        throw new UnauthorizedError("Unauthorized: No token provided");
+      });
       const response = await request(app)
         .delete("/api/v1/networks/test-net");
-
       expect(response.status).toBe(401);
       expect(response.body.message).toMatch(/Unauthorized/);
     });

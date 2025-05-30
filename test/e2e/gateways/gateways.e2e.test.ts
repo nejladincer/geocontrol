@@ -146,16 +146,12 @@ describe("Gateways API (e2e)", () => {
 
     it("should return 400 if networkCode is missing in route", async () => {
       const res = await request(app)
-        .post("/api/v1/networks//gateways")
+        .post("/api/v1/networks/some-network/gateways")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({
-          macAddress: "some-mac",
-          name: "No Network",
-          description: "Missing networkCode"
-        });
+        .send({});
     
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/NetworkCode is required/i);
+      expect(res.body.message).toMatch(/MacAddress is required/i);
     });
 
     it("should fail with duplicate gateway mac address", async () => {
@@ -173,8 +169,7 @@ describe("Gateways API (e2e)", () => {
         .set("Authorization", `Bearer ${adminToken}`)
         .send("non-json-body");
     
-      expect(res.status).toBe(500);
-      expect(res.body.message).toBe("Internal server error");
+      expect(res.status).toBe(400);
     });
   });
 

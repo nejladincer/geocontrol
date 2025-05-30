@@ -9,6 +9,7 @@ import { Measurements } from "@models/dto/Measurements";
 const mockFind = jest.fn();
 const mockSave = jest.fn();
 const mockRemove = jest.fn();
+const mockFindOne = jest.fn();
 
 jest.mock("@database", () => ({
   AppDataSource: {
@@ -16,6 +17,7 @@ jest.mock("@database", () => ({
       find: mockFind,
       save: mockSave,
       remove: mockRemove,
+      findOne: mockFindOne,
     })),
   },
 }));
@@ -108,6 +110,7 @@ describe("MeasurementsRepository: mocked database", () => {
     mockFind.mockResolvedValue([
       { createdAt: new Date().toISOString(), value: 42, isOutlier: false },
     ]);
+    mockFindOne.mockResolvedValue({ macAddress: sensorMac, gatewayMac: "00:1A:2B:3C:4D:5E" });
 
     const measurements = await repo.getMeasurementsFromSensorsInNetwork(networkCode, [sensorMac]);
 
@@ -121,6 +124,7 @@ describe("MeasurementsRepository: mocked database", () => {
     mockFind.mockResolvedValue([
       { createdAt: new Date().toISOString(), value: 42, isOutlier: false },
     ]);
+    mockFindOne.mockResolvedValue({ macAddress: sensorMac, gatewayMac: "00:1A:2B:3C:4D:5E" });
 
     const stats = await repo.getStatsFromSensorsInNetwork(networkCode, [sensorMac]);
 
@@ -134,6 +138,7 @@ describe("MeasurementsRepository: mocked database", () => {
     mockFind.mockResolvedValue([
       { createdAt: new Date().toISOString(), value: 42, isOutlier: true },
     ]);
+    mockFindOne.mockResolvedValue({ macAddress: sensorMac, gatewayMac: "00:1A:2B:3C:4D:5E" });
 
     const outliers = await repo.getOutliersFromSensorsInNetwork(networkCode, [sensorMac]);
 
