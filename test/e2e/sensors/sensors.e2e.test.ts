@@ -17,9 +17,49 @@ describe("Sensors API (e2e)", () => {
     adminToken = generateToken(TEST_USERS.admin);
     operatorToken = generateToken(TEST_USERS.operator);
     viewerToken = generateToken(TEST_USERS.viewer);
+
+    // Ensure test network exists
+    await request(app)
+      .post("/api/v1/networks")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        code: networkCode,
+        name: "Test Network",
+        description: "Sensor test network"
+      });
+
+    // Ensure test gateway exists
+    await request(app)
+      .post(`/api/v1/networks/${networkCode}/gateways`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        macAddress: gatewayMac,
+        name: "Test Gateway",
+        description: "Gateway for sensors",
+        location: "Test Lab"
+      });
   });
 
   afterAll(async () => {
+    // Clean up sensors
+    await request(app)
+      .delete(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    await request(app)
+      .delete(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/sensor-002`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    // Clean up gateway
+    await request(app)
+      .delete(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    // Clean up network
+    await request(app)
+      .delete(`/api/v1/networks/${networkCode}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
     await afterAllE2e();
   });
 
@@ -185,11 +225,27 @@ describe("Sensors API (e2e)", () => {
   });
 
   it("should delete sensor (operator)", async () => {
-    const res = await request(app)
-      .delete(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
-      .set("Authorization", `Bearer ${operatorToken}`);
-    expect(res.status).toBe(204);
-  });
+  const sensorMacToDelete = "sensor-operator-delete";
+
+  // Ensure the sensor exists before attempting deletion
+  await request(app)
+    .post(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors`)
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      macAddress: sensorMacToDelete,
+      name: "Operator Delete Sensor",
+      description: "Test sensor for operator delete",
+      variable: "temperature",
+      unit: "C"
+    });
+
+  const res = await request(app)
+    .delete(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMacToDelete}`)
+    .set("Authorization", `Bearer ${operatorToken}`);
+
+  expect(res.status).toBe(204);
+});
+
 
   it("should not allow viewer to delete sensor", async () => {
     const res = await request(app)

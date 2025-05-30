@@ -7,12 +7,14 @@ import { mapSensorDAOToDTO } from "@services/mappings/sensorMapperService";
 export async function getAllSensors(networkCode: string, gatewayMac: string): Promise<SensorDTO[]> {
   try {
     const gatewayRepo = new GatewayRepository();
-    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); // ensure gateway exists
+    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode);
 
     const sensorRepo = new SensorRepository();
     const sensors = await sensorRepo.getAllSensorsInGateway(gatewayMac);
     return sensors.map(mapSensorDAOToDTO);
   } catch (error) {
+    console.error("[getAllSensors ERROR]", error);
+    if (error instanceof AppError) throw error;
     throw new AppError("Failed to fetch sensors", 500);
   }
 }
@@ -20,24 +22,26 @@ export async function getAllSensors(networkCode: string, gatewayMac: string): Pr
 export async function getSensor(sensorMac: string, gatewayMac: string, networkCode: string): Promise<SensorDTO> {
   try {
     const gatewayRepo = new GatewayRepository();
-    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); // validate parent
+    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode);
 
     const sensorRepo = new SensorRepository();
     const sensor = await sensorRepo.getSensorByMacAddress(sensorMac, gatewayMac);
     return mapSensorDAOToDTO(sensor);
   } catch (error) {
+    console.error("[getSensor ERROR]", error);
+    if (error instanceof AppError) throw error;
     throw new AppError("Sensor not found", 404);
   }
 }
 
-// Only for "internal" use, not exposed in Swagger API
 export async function getAllSensorsInNetwork(networkCode: string): Promise<SensorDTO[]> {
   try {
     const sensorRepo = new SensorRepository();
     const sensors = await sensorRepo.getAllSensorsInNetwork(networkCode);
-    return sensors.map( (s) => mapSensorDAOToDTO(s) );
-  }
-  catch (error) {
+    return sensors.map(mapSensorDAOToDTO);
+  } catch (error) {
+    console.error("[getAllSensorsInNetwork ERROR]", error);
+    if (error instanceof AppError) throw error;
     throw new AppError("Failed to fetch sensors in network", 500);
   }
 }
@@ -47,7 +51,7 @@ export async function createSensor(sensorDto: SensorDTO, gatewayMac: string, net
 
   try {
     const gatewayRepo = new GatewayRepository();
-    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); // ensure gateway exists
+    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode);
 
     const sensorRepo = new SensorRepository();
     await sensorRepo.createSensor(
@@ -59,7 +63,9 @@ export async function createSensor(sensorDto: SensorDTO, gatewayMac: string, net
       gatewayMac
     );
   } catch (error) {
-    if (error.message.includes("already exists")) {
+    console.error("[createSensor ERROR]", error);
+    if (error instanceof AppError) throw error;
+    if (error.message?.includes("already exists")) {
       throw new AppError("Sensor already exists", 409);
     }
     throw new AppError("Failed to create sensor", 500);
@@ -74,6 +80,8 @@ export async function updateSensor(sensorMac: string, gatewayMac: string, networ
     const sensorRepo = new SensorRepository();
     await sensorRepo.updateSensor(sensorMac, gatewayMac, updateDto);
   } catch (error) {
+    console.error("[updateSensor ERROR]", error);
+    if (error instanceof AppError) throw error;
     throw new AppError("Failed to update sensor", 500);
   }
 }
@@ -86,6 +94,8 @@ export async function deleteSensor(sensorMac: string, gatewayMac: string, networ
     const sensorRepo = new SensorRepository();
     await sensorRepo.deleteSensor(sensorMac, gatewayMac);
   } catch (error) {
+    console.error("[deleteSensor ERROR]", error);
+    if (error instanceof AppError) throw error;
     throw new AppError("Failed to delete sensor", 500);
   }
 }
