@@ -21,15 +21,21 @@ export async function calculateStats(
   // Validate start and end dates
   if (!startDate) {
     startDateISO = new Date(0).toISOString(); // Start of time
-  } else if (!endDate) {
+  } else {
+    startDateISO = startDate;
+  }
+
+  if (!endDate) {
     endDateISO = new Date().toISOString(); // Current time
+  } else {
+    endDateISO = endDate;
   }
 
   // Handle empty measurements array
   if (measurements.length === 0) {
     return <Stats>{
-      startDate: startDateISO,
-      endDate: endDateISO,
+      startDate: new Date(startDateISO),
+      endDate: new Date(endDateISO),
       mean: 0,
       variance: 0,
       upperThreshold: 0,
@@ -37,21 +43,23 @@ export async function calculateStats(
     };
   }
 
-  // Calculate stats from measurements
-  const mean = measurements.reduce((sum, m) => sum + m, 0) / measurements.length;
+  // Extract values from measurements
+  const values = measurements.map(m => Number(m.value));
 
-  let variance = 0;
-  measurements.forEach((m) => (variance += (m - mean) ** 2));
-  variance /= measurements.length;
+  // Calculate mean
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
 
+  // Calculate variance
+  const variance = values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
+
+  // Calculate standard deviation and thresholds
   const stdDev = Math.sqrt(variance);
-
   const upperThreshold = mean + 2 * stdDev;
   const lowerThreshold = mean - 2 * stdDev;
 
   return <Stats>{
-    startDate: startDateISO,
-    endDate: endDateISO,
+    startDate: new Date(startDateISO),
+    endDate: new Date(endDateISO),
     mean: mean,
     variance: variance,
     upperThreshold: upperThreshold,

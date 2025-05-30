@@ -28,13 +28,24 @@ router.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { networkCode, gatewayMac, sensorMac } = req.params;
-      const { createdAt, value } = req.body;
+      const measurements = req.body;
       
-      if (!createdAt || !value) {
-        throw new AppError("Missing required fields", 400);
+      if (!Array.isArray(measurements)) {
+        throw new AppError("Request body must be an array of measurements", 400);
       }
 
-      await storeMeasurementForSensor(networkCode, gatewayMac, sensorMac, createdAt, value);
+      if (measurements.length === 0) {
+        throw new AppError("Measurements array cannot be empty", 400);
+      }
+
+      for (const measurement of measurements) {
+        const { createdAt, value } = measurement;
+        if (!createdAt || value === undefined) {
+          throw new AppError("Each measurement must have createdAt and value fields", 400);
+        }
+        await storeMeasurementForSensor(networkCode, gatewayMac, sensorMac, createdAt, value);
+      }
+
       res.status(201).send();
     } catch (error) {
       next(error instanceof AppError ? error : new AppError("Internal server error", 500));
