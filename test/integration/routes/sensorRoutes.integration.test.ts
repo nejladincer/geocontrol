@@ -109,7 +109,7 @@ describe("SensorRoutes integration", () => {
         .send(newSensor);
 
       expect(res.status).toBe(201);
-      expect(sensorController.createSensor).toHaveBeenCalledWith(newSensor);
+      expect(sensorController.createSensor).toHaveBeenCalledWith(newSensor, "test-gateway", "test-network");
       
     });
 
@@ -147,9 +147,10 @@ describe("SensorRoutes integration", () => {
           });
     
           const res = await request(app)
-            .get("/api/v1/networks/gateways/non-existent")
-            .set("Authorization", token);
-    
+            .post("/api/v1/networks/test-network/gateways/non-existent/sensors")
+            .set("Authorization", token)
+            .send(newSensor);
+
           expect(res.status).toBe(404);
           expect(res.body.message).toMatch(/not found/);
         });
