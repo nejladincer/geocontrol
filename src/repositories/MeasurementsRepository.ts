@@ -21,6 +21,7 @@ import { SensorRepository } from "@repositories/SensorRepository";
 import { SensorDAO } from "@models/dao/SensorDAO";
 import { GatewayRepository } from "./GatewayRepository";
 import { log } from "console";
+import { NotFoundError } from "@models/errors/NotFoundError";
 
 export class MeasurementsRepository {
   private repo: Repository<MeasurementDAO>;
@@ -160,6 +161,11 @@ export class MeasurementsRepository {
     validateNetworkCode(networkCode);
     validateGatewayMac(gatewayMac);
     validateSensorMac(sensorMac);
+
+    const network = await getNetwork(networkCode);
+    if (!network) {
+      throw new NotFoundError(`Network with code ${networkCode} not found`);
+    }
 
     // Retrieve the sensor to ensure it exists and set the foreign key relationship
     const sensorRepo = new SensorRepository();

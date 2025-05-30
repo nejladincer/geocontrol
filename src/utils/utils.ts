@@ -63,7 +63,7 @@ function validName(name: string): boolean {
 
 /* NETWORKS VALIDATION */
 export function validateNetworkCode(networkCode: string): void {
-  if (!networkCode || typeof networkCode !== "string" || networkCode.length < 3) {
+  if (!networkCode ||  typeof networkCode !== "string" || networkCode.length < 3) {
     throw new Error(`Invalid network ${networkCode}`);
   }
 }
