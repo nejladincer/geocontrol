@@ -14,7 +14,6 @@ describe("Gateways API (e2e)", () => {
     await beforeAllE2e();
     const networkRepo = AppDataSource.getRepository(NetworkDAO);
 
-    // Crea la rete test-network se non esiste
     const existing = await networkRepo.findOneBy({ code: "test-network" });
     if (!existing) {
       const testNetwork = networkRepo.create({
@@ -147,7 +146,7 @@ describe("Gateways API (e2e)", () => {
 
     it("should return 400 if networkCode is missing in route", async () => {
       const res = await request(app)
-        .post("/api/v1/networks//gateways") // networkCode vuoto
+        .post("/api/v1/networks//gateways")
         .set("Authorization", `Bearer ${adminToken}`)
         .send({
           macAddress: "some-mac",
