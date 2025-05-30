@@ -23,7 +23,7 @@ export class SensorDAO {
   @ManyToOne(() => GatewayDAO, gateway => gateway.sensors, {
     onDelete: "CASCADE",
   })
-  @JoinColumn({ name: "gatewayMac" }) // deve esistere
+  @JoinColumn({ name: "gatewayMac" }) 
   gateway: GatewayDAO;
 
   @Column()

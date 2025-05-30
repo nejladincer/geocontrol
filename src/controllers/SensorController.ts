@@ -7,7 +7,7 @@ import { mapSensorDAOToDTO } from "@services/mappings/sensorMapperService";
 export async function getAllSensors(networkCode: string, gatewayMac: string): Promise<SensorDTO[]> {
   try {
     const gatewayRepo = new GatewayRepository();
-    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); // ensure gateway exists
+    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); 
 
     const sensorRepo = new SensorRepository();
     const sensors = await sensorRepo.getAllSensorsInGateway(gatewayMac);
@@ -20,7 +20,7 @@ export async function getAllSensors(networkCode: string, gatewayMac: string): Pr
 export async function getSensor(sensorMac: string, gatewayMac: string, networkCode: string): Promise<SensorDTO> {
   try {
     const gatewayRepo = new GatewayRepository();
-    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); // validate parent
+    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); 
 
     const sensorRepo = new SensorRepository();
     const sensor = await sensorRepo.getSensorByMacAddress(sensorMac, gatewayMac);
@@ -30,7 +30,6 @@ export async function getSensor(sensorMac: string, gatewayMac: string, networkCo
   }
 }
 
-// Only for "internal" use, not exposed in Swagger API
 export async function getAllSensorsInNetwork(networkCode: string): Promise<SensorDTO[]> {
   try {
     const sensorRepo = new SensorRepository();
@@ -47,7 +46,7 @@ export async function createSensor(sensorDto: SensorDTO, gatewayMac: string, net
 
   try {
     const gatewayRepo = new GatewayRepository();
-    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode); // ensure gateway exists
+    await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode);
 
     const sensorRepo = new SensorRepository();
     await sensorRepo.createSensor(

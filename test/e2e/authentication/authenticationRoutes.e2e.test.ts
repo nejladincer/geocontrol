@@ -3,13 +3,13 @@ import { app } from "@app";
 import { AppDataSource } from "@database";
 import { beforeAllE2e, afterAllE2e } from "@test/e2e/lifecycle";
 import { UserDAO } from "@dao/UserDAO";
-import { UserType } from "@models/UserType"; // Importa l'enum corretto
+import { UserType } from "@models/UserType";
 
 describe("POST /api/v1/auth", () => {
   const validUser = {
     username: "test-user",
     password: "securepassword",
-    type: UserType.Admin, // Usa l'enum, non una stringa
+    type: UserType.Admin, 
   };
 
   beforeAll(async () => {
