@@ -1,9 +1,13 @@
 import { ErrorDTO } from "@dto/ErrorDTO";
 import { AppError } from "@errors/AppError";
 import { logError } from "@services/loggingService";
-import { createErrorDTO } from "@services/mapperService";
+import { createErrorDTO } from "@services/mappings/errorMapperService";
 
 export function createAppError(err: any): ErrorDTO {
+  if (!err) {
+    logError(err);
+    return createErrorDTO(500, "Internal Server Error", "InternalServerError");
+  }
   let modelError: ErrorDTO = createErrorDTO(
     500,
     err?.message || "Internal Server Error",

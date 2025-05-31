@@ -50,3 +50,34 @@ export function parseStringArrayParam(param?: unknown): string[] | undefined {
 
   return undefined;
 }
+
+/* VALIDATION FUNCTIONS */
+function validName(name: string): boolean {
+  const regexp = /^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/;
+  if (!regexp.test(name)) {
+    return false;
+  }
+
+  return true;
+}
+
+/* NETWORKS VALIDATION */
+export function validateNetworkCode(networkCode: string): void {
+  if (!networkCode || typeof networkCode !== "string" || networkCode.length < 3) {
+    throw new Error(`Invalid network ${networkCode}`);
+  }
+}
+
+/* GATEWAYS VALIDATION */
+export function validateGatewayMac(gatewayMac: string): void {
+  if (!gatewayMac || typeof gatewayMac !== "string" || !validName(gatewayMac)) {
+    throw new Error(`Invalid gateway MAC address ${gatewayMac}`);
+  }
+}
+
+/* SENSOR VALIDATION */
+export function validateSensorMac(sensorMac: string): void {
+  if (!sensorMac || typeof sensorMac !== "string" || !validName(sensorMac)) {
+    throw new Error(`Invalid sensor MAC address ${sensorMac}`);
+  }
+}

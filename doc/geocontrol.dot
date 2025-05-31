@@ -1,0 +1,17 @@
+digraph dependencies {
+    "models/dto/Gateway" -> "models/dto/Sensor";
+    "models/dto/User" -> "models/UserType";
+    "models/dto/Measurements" -> "models/dto/Stats";
+    "models/dto/Measurements" -> "models/dto/Measurement";
+    "models/dto/Network" -> "models/dto/Gateway";
+    "models/dao/SensorDAO" -> "models/dao/GatewayDAO";
+    "models/dao/SensorDAO" -> "models/dao/MeasurementDAO";
+    "services/mappings/errorMapperService" -> "services/mappings/userMapperService";
+    "models/dao/NetworkDAO" -> "models/dao/GatewayDAO";
+    "models/dao/GatewayDAO" -> "models/dao/NetworkDAO";
+    "models/dao/GatewayDAO" -> "models/dao/SensorDAO";
+    "repositories/MeasurementsRepository" -> "repositories/GatewayRepository";
+    "utils/statsUtils" -> "utils/dateUtils";
+    "models/dao/MeasurementDAO" -> "models/dao/NetworkDAO";
+    "models/dao/MeasurementDAO" -> "models/dao/SensorDAO";
+}

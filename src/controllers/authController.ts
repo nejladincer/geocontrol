@@ -3,7 +3,8 @@ import { UnauthorizedError } from "@errors/UnauthorizedError";
 import { Token as TokenDTO } from "@models/dto/Token";
 import { UserRepository } from "@repositories/UserRepository";
 import { generateToken } from "@services/authService";
-import { createTokenDTO, createUserDTO } from "@services/mapperService";
+import { createTokenDTO } from "@services/mappings/tokenMapperService";
+import { createUserDTO } from "@services/mappings/userMapperService";
 
 export async function getToken(userDto: UserDTO): Promise<TokenDTO> {
   const userRepo = new UserRepository();

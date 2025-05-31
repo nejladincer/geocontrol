@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "CommonJS",
     "lib": ["ES2022", "DOM"],
+    "types": ["jest", "node"],
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
@@ -24,7 +25,7 @@
       "@middlewares/*": ["middlewares/*"],
       "@database": ["database/connection.ts"],
       "@config": ["config/config.ts"],
-      "@utils": ["utils.ts"],
+      "@utils/*": ["utils/*"],
       "@app": ["app.ts"],
       "@test/*": ["../test/*"]
     }

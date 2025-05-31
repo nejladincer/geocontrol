@@ -93,4 +93,3 @@ export function GatewayToJSONTyped(value?: Gateway | null, ignoreDiscriminator: 
         'sensors': value['sensors'] == null ? undefined : ((value['sensors'] as Array<any>).map(SensorToJSON)),
     };
 }
-
