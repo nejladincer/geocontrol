@@ -23,7 +23,7 @@ export class GatewayDAO {
   networkCode: string;
 
   @OneToMany(() => SensorDAO, sensor => sensor.gateway, {
-    cascade: true,
+    eager: true,
   })
   sensors: SensorDAO[];
-}
+} 

@@ -1,5 +1,5 @@
 import AppError from "@models/errors/AppError";
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { UserType } from "@models/UserType";
 import {
   getAllGateways, 
@@ -97,5 +97,17 @@ router.delete(
     }
   }
 );
+
+["options", "put", "post", "head", "trace", "connect"].forEach(method => {
+  router[method]("/:macAddress", (_req, res) => {
+    res.status(405).send({ error: "Method Not Allowed" });
+  });
+});
+
+["options", "put", "patch", "delete", "head", "trace", "connect"].forEach(method => {
+  router[method]("/", (_req, res) => {
+    res.status(405).send({ error: "Method Not Allowed" });
+  });
+});
 
 export default router;
