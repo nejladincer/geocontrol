@@ -3,6 +3,9 @@ import { SensorRepository } from "@repositories/SensorRepository";
 import { GatewayRepository } from "@repositories/GatewayRepository";
 import AppError from "@models/errors/AppError";
 import { mapSensorDAOToDTO } from "@services/mappings/sensorMapperService";
+import { NotFoundError } from "@models/errors/NotFoundError";
+import { ConflictError } from "@models/errors/ConflictError";
+import { BadRequestError } from "@models/errors/BadRequestError";
 
 export async function getAllSensors(networkCode: string, gatewayMac: string): Promise<SensorDTO[]> {
   try {
@@ -30,7 +33,7 @@ export async function getSensor(sensorMac: string, gatewayMac: string, networkCo
   } catch (error) {
     // console.error("[getSensor ERROR]", error);
     if (error instanceof AppError) throw error;
-    throw new AppError("Sensor not found", 404);
+    throw new NotFoundError(`Sensor with macAddress '${sensorMac}' not found`);
   }
 }
 
@@ -47,7 +50,7 @@ export async function getAllSensorsInNetwork(networkCode: string): Promise<Senso
 }
 
 export async function createSensor(sensorDto: SensorDTO, gatewayMac: string, networkCode: string): Promise<void> {
-  if (!sensorDto.macAddress) throw new AppError("Sensor macAddress is required", 400);
+  if (!sensorDto.macAddress) throw new BadRequestError("Sensor macAddress is required");
 
   try {
     const gatewayRepo = new GatewayRepository();
@@ -66,7 +69,7 @@ export async function createSensor(sensorDto: SensorDTO, gatewayMac: string, net
     // console.error("[createSensor ERROR]", error);
     if (error instanceof AppError) throw error;
     if (error.message?.includes("already exists")) {
-      throw new AppError("Sensor already exists", 409);
+      throw new AppError("Sensor already exists"  , 409);
     }
     throw new AppError("Failed to create sensor", 500);
   }

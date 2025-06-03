@@ -4,6 +4,7 @@ import { GatewayDAO } from "@dao/GatewayDAO";
 import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
 import { NetworkDAO } from "@dao/NetworkDAO";
 import { ConflictError } from "@models/errors/ConflictError";
+import { SensorDAO } from "@models/dao/SensorDAO";
 
 export class GatewayRepository {
   private repo: Repository<GatewayDAO>;
@@ -29,7 +30,7 @@ export class GatewayRepository {
 
   async getGatewayByMacAddress(macAddress: string, networkCode: string): Promise<GatewayDAO> {
     const gateway = await this.repo.findOne({ 
-      where: { macAddress, network: { code: networkCode } },
+      where: { macAddress, networkCode },
       relations: ['network', 'sensors']
     });
     return findOrThrowNotFound(
@@ -70,17 +71,38 @@ export class GatewayRepository {
       newMacAddress?: string,
       newName?: string,
       newDescription?: string
-    }): Promise<GatewayDAO> {
+    }
+  ): Promise<GatewayDAO> {
     const targetGateway = await this.getGatewayByMacAddress(macAddress, networkCode);
   
     if (newValues.newMacAddress && newValues.newMacAddress !== macAddress) {
       const existing = await this.repo.find({ where: { macAddress: newValues.newMacAddress } });
   
-      if (existing) {
+      if (existing.length > 0) {
         throw new ConflictError(`Gateway with macAddress '${newValues.newMacAddress}' already exists`);
       }
   
-      targetGateway.macAddress = newValues.newMacAddress;
+      const newGateway = this.repo.create({
+        macAddress: newValues.newMacAddress,
+        name: newValues.newName !== undefined ? newValues.newName : targetGateway.name,
+        description: newValues.newDescription !== undefined ? newValues.newDescription : targetGateway.description,
+        networkCode: targetGateway.networkCode,
+      });
+  
+   
+      await this.repo.save(newGateway);
+
+      if (targetGateway.sensors && targetGateway.sensors.length > 0) {
+        const sensorRepo = this.repo.manager.getRepository(SensorDAO);
+        for (const sensor of targetGateway.sensors) {
+          sensor.gateway = newGateway; 
+          await sensorRepo.save(sensor);
+        }
+      }
+  
+      await this.repo.delete({ macAddress, networkCode });
+  
+      return newGateway;
     }
   
     if (newValues.newName !== undefined) {
