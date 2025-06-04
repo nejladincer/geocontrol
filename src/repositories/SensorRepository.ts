@@ -3,6 +3,8 @@ import { Repository } from "typeorm";
 import { SensorDAO } from "@dao/SensorDAO";
 import { GatewayDAO } from "@dao/GatewayDAO";
 import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
+import { ConflictError } from "@models/errors/ConflictError";
+import { NotFoundError } from "@models/errors/NotFoundError";
 
 export class SensorRepository {
   private repo: Repository<SensorDAO>;
@@ -81,19 +83,58 @@ export class SensorRepository {
   }
 
   async updateSensor(
-    macAddress: string,
-    gatewayMac: string,
-    updates: Partial<Omit<SensorDAO, "gateway" | "macAddress">>
-  ): Promise<SensorDAO> {
-    const sensor = await this.getSensorByMacAddress(macAddress, gatewayMac);
+  macAddress: string,
+  gatewayMac: string,
+  updates: Partial<SensorDAO>
+): Promise<SensorDAO> {
+const oldSensor = await this.repo.findOne({
+  where: {
+    macAddress,
+    gateway: { macAddress: gatewayMac },
+  },
+  relations: ["gateway", "measurements"],
+});
 
-    if (updates.name !== undefined) sensor.name = updates.name;
-    if (updates.description !== undefined) sensor.description = updates.description;
-    if (updates.variable !== undefined) sensor.variable = updates.variable;
-    if (updates.unit !== undefined) sensor.unit = updates.unit;
+if (!oldSensor) {
+  throw new NotFoundError(`Sensor with macAddress '${macAddress}' not found`);
+}
 
-    return this.repo.save(sensor);
+  // If macAddress is NOT being changed, proceed normally
+  if (!updates.macAddress || updates.macAddress === macAddress) {
+    if (updates.name !== undefined) oldSensor.name = updates.name;
+    if (updates.description !== undefined) oldSensor.description = updates.description;
+    if (updates.variable !== undefined) oldSensor.variable = updates.variable;
+    if (updates.unit !== undefined) oldSensor.unit = updates.unit;
+    return this.repo.save(oldSensor);
   }
+
+  // If macAddress IS changing, perform a "migration"
+  const newMac = updates.macAddress;
+
+  // Check for conflict
+  const existing = await this.repo.findOneBy({ macAddress: newMac });
+  if (existing) {
+    throw new ConflictError(`Sensor with macAddress '${newMac}' already exists`);
+  }
+
+  const newSensor = this.repo.create({
+    macAddress: newMac,
+    name: updates.name ?? oldSensor.name,
+    description: updates.description ?? oldSensor.description,
+    variable: updates.variable ?? oldSensor.variable,
+    unit: updates.unit ?? oldSensor.unit,
+    gateway: oldSensor.gateway,
+    gatewayMac: oldSensor.gatewayMac,
+    measurements: oldSensor.measurements,
+  });
+
+  await this.repo.save(newSensor);
+  await this.repo.remove(oldSensor); // Remove old sensor with old MAC
+
+  return newSensor;
+}
+
+
 
   async deleteSensor(macAddress: string, gatewayMac: string): Promise<void> {
     const sensor = await this.getSensorByMacAddress(macAddress, gatewayMac);
