@@ -86,48 +86,48 @@ describe("SensorController", () => {
   });
 
   describe("getSensor", () => {
-    it("should return a specific sensor", async () => {
-      (GatewayRepository as jest.Mock).mockImplementation(() => ({
-        getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
-      }));
-      
-      (SensorRepository as jest.Mock).mockImplementation(() => ({
-        getSensorByMacAddress: jest.fn().mockResolvedValue(mockSensor)
-      }));
+  it("should return a specific sensor", async () => {
+    (GatewayRepository as jest.Mock).mockImplementation(() => ({
+      getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
+    }));
+    
+    (SensorRepository as jest.Mock).mockImplementation(() => ({
+      getSensorByMacAddress: jest.fn().mockResolvedValue(mockSensor)
+    }));
 
-      const result = await sensorController.getSensor(sensorMac, gatewayMac, networkCode);
-      
-      expect(result).toEqual({
-        macAddress: sensorMac,
-        name: "Test Sensor",
-        description: "A test sensor",
-        variable: "temperature",
-        unit: "°C"
-      });
-    });
-
-    it("should throw error when sensor not found", async () => {
-      (GatewayRepository as jest.Mock).mockImplementation(() => ({
-        getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
-      }));
-      
-      (SensorRepository as jest.Mock).mockImplementation(() => ({
-        getSensorByMacAddress: jest.fn().mockRejectedValue(new Error())
-      }));
-
-      await expect(sensorController.getSensor(sensorMac, gatewayMac, networkCode))
-        .rejects.toThrow("Sensor not found");
-    });
-
-    it("should throw error when gateway validation fails", async () => {
-      (GatewayRepository as jest.Mock).mockImplementation(() => ({
-        getGatewayByMacAddress: jest.fn().mockRejectedValue(new Error())
-      }));
-
-      await expect(sensorController.getSensor(sensorMac, gatewayMac, networkCode))
-        .rejects.toThrow("Sensor not found");
+    const result = await sensorController.getSensor(sensorMac, gatewayMac, networkCode);
+    
+    expect(result).toEqual({
+      macAddress: sensorMac,
+      name: "Test Sensor",
+      description: "A test sensor",
+      variable: "temperature",
+      unit: "°C"
     });
   });
+
+  it("should throw error when sensor not found", async () => {
+    (GatewayRepository as jest.Mock).mockImplementation(() => ({
+      getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
+    }));
+    
+    (SensorRepository as jest.Mock).mockImplementation(() => ({
+      getSensorByMacAddress: jest.fn().mockRejectedValue(new Error())
+    }));
+
+    await expect(sensorController.getSensor(sensorMac, gatewayMac, networkCode))
+      .rejects.toThrow(`Sensor with macAddress '${sensorMac}' not found`);
+  });
+
+  it("should throw error when gateway validation fails", async () => {
+    (GatewayRepository as jest.Mock).mockImplementation(() => ({
+      getGatewayByMacAddress: jest.fn().mockRejectedValue(new Error())
+    }));
+
+    await expect(sensorController.getSensor(sensorMac, gatewayMac, networkCode))
+      .rejects.toThrow(`Sensor with macAddress '${sensorMac}' not found`);
+  });
+});
 
   describe("getAllSensorsInNetwork", () => {
     it("should return all sensors in a network", async () => {
@@ -222,46 +222,47 @@ describe("SensorController", () => {
   });
 
   describe("updateSensor", () => {
-    const updateDto = {
-      name: "Updated Sensor",
-      description: "Updated description"
-    };
+  const updateDto = {
+    macAddress: sensorMac, // ✅ required now
+    name: "Updated Sensor",
+    description: "Updated description"
+  };
 
-    it("should update a sensor", async () => {
-      (GatewayRepository as jest.Mock).mockImplementation(() => ({
-        getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
-      }));
-      
-      (SensorRepository as jest.Mock).mockImplementation(() => ({
-        updateSensor: jest.fn().mockResolvedValue(undefined)
-      }));
+  it("should update a sensor", async () => {
+    (GatewayRepository as jest.Mock).mockImplementation(() => ({
+      getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
+    }));
+    
+    (SensorRepository as jest.Mock).mockImplementation(() => ({
+      updateSensor: jest.fn().mockResolvedValue(undefined)
+    }));
 
-      await expect(sensorController.updateSensor(sensorMac, gatewayMac, networkCode, updateDto))
-        .resolves.not.toThrow();
-    });
-
-    it("should throw error when update fails", async () => {
-      (GatewayRepository as jest.Mock).mockImplementation(() => ({
-        getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
-      }));
-      
-      (SensorRepository as jest.Mock).mockImplementation(() => ({
-        updateSensor: jest.fn().mockRejectedValue(new Error())
-      }));
-
-      await expect(sensorController.updateSensor(sensorMac, gatewayMac, networkCode, updateDto))
-        .rejects.toThrow("Failed to update sensor");
-    });
-
-    it("should throw error when gateway validation fails", async () => {
-      (GatewayRepository as jest.Mock).mockImplementation(() => ({
-        getGatewayByMacAddress: jest.fn().mockRejectedValue(new Error())
-      }));
-
-      await expect(sensorController.updateSensor(sensorMac, gatewayMac, networkCode, updateDto))
-        .rejects.toThrow("Failed to update sensor");
-    });
+    await expect(sensorController.updateSensor(sensorMac, gatewayMac, networkCode, updateDto))
+      .resolves.not.toThrow();
   });
+
+  it("should throw error when update fails", async () => {
+    (GatewayRepository as jest.Mock).mockImplementation(() => ({
+      getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
+    }));
+    
+    (SensorRepository as jest.Mock).mockImplementation(() => ({
+      updateSensor: jest.fn().mockRejectedValue(new Error())
+    }));
+
+    await expect(sensorController.updateSensor(sensorMac, gatewayMac, networkCode, updateDto))
+      .rejects.toThrow("Failed to update sensor");
+  });
+
+  it("should throw error when gateway validation fails", async () => {
+    (GatewayRepository as jest.Mock).mockImplementation(() => ({
+      getGatewayByMacAddress: jest.fn().mockRejectedValue(new Error())
+    }));
+
+    await expect(sensorController.updateSensor(sensorMac, gatewayMac, networkCode, updateDto))
+      .rejects.toThrow("Failed to update sensor");
+  });
+});
 
   describe("deleteSensor", () => {
     it("should delete a sensor", async () => {

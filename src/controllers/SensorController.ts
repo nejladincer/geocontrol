@@ -75,7 +75,16 @@ export async function createSensor(sensorDto: SensorDTO, gatewayMac: string, net
   }
 }
 
-export async function updateSensor(sensorMac: string, gatewayMac: string, networkCode: string, updateDto: Partial<SensorDTO>): Promise<void> {
+export async function updateSensor(
+  sensorMac: string,
+  gatewayMac: string,
+  networkCode: string,
+  updateDto: Partial<SensorDTO>
+): Promise<void> {
+  if (!updateDto.macAddress || updateDto.macAddress.trim() === "") {
+    throw new BadRequestError("Missing or empty macAddress");
+  }
+
   try {
     const gatewayRepo = new GatewayRepository();
     await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode);
@@ -83,11 +92,11 @@ export async function updateSensor(sensorMac: string, gatewayMac: string, networ
     const sensorRepo = new SensorRepository();
     await sensorRepo.updateSensor(sensorMac, gatewayMac, updateDto);
   } catch (error) {
-    // console.error("[updateSensor ERROR]", error);
     if (error instanceof AppError) throw error;
     throw new AppError("Failed to update sensor", 500);
   }
 }
+
 
 export async function deleteSensor(sensorMac: string, gatewayMac: string, networkCode: string): Promise<void> {
   try {
