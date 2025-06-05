@@ -54,23 +54,28 @@ export async function updateNetwork(
   code: string,
   networkDto: NetworkDTO
 ): Promise<void> {
+  // Empty code check
+  if (!networkDto.code || networkDto.code.trim() === '') {
+    throw new AppError("Network code cannot be empty", 400);
+  }
+  
   try {
     const networkRepo = new NetworkRepository();
+    
     await networkRepo.updateNetwork(
       code,
+      networkDto.code, 
       networkDto.name,
-      networkDto.description
+      networkDto.description 
     );
   } catch (error) {
-    if (error instanceof AppError) {
-      if (error.message.includes("not found")) {
-        throw new NotFoundError(`Network with code '${code}' not found`);
-      }
-      if (error.message.includes("already exists")) {
-        throw new ConflictError(`Network code '${networkDto.code}' already in use`);
-      }
+    if (error instanceof ConflictError) {
+      throw error;
+    } else if (error instanceof NotFoundError) {
+      throw error;
+    } else {
+      throw new AppError("Internal server error", 500);
     }
-    throw new AppError("Internal server error", 500);
   }
 }
 
@@ -86,4 +91,4 @@ export async function deleteNetwork(code: string): Promise<void> {
     }
     throw new AppError("Internal server error", 500);
   }
-} 
+}

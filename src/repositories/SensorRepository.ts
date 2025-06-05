@@ -5,6 +5,7 @@ import { GatewayDAO } from "@dao/GatewayDAO";
 import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
 import { ConflictError } from "@models/errors/ConflictError";
 import { NotFoundError } from "@models/errors/NotFoundError";
+import { MeasurementDAO } from "@dao/MeasurementDAO";
 
 export class SensorRepository {
   private repo: Repository<SensorDAO>;
@@ -136,8 +137,26 @@ if (!oldSensor) {
 
 
 
-  async deleteSensor(macAddress: string, gatewayMac: string): Promise<void> {
-    const sensor = await this.getSensorByMacAddress(macAddress, gatewayMac);
-    await this.repo.remove(sensor);
+  async deleteSensor(macAddress: string, gatewayMac: string, networkCode: string): Promise<void> {
+    const sensorRepo = AppDataSource.getRepository(SensorDAO);
+    const measurementRepo = AppDataSource.getRepository(MeasurementDAO);
+    
+    // Find the sensor to verify it exists
+    const sensor = await sensorRepo.findOne({
+      where: { 
+        macAddress, 
+        gatewayMac 
+      }
+    });
+    
+    if (!sensor) {
+      throw new NotFoundError(`Sensor with macAddress '${macAddress}' not found`);
+    }
+    
+    // First delete all measurements belonging to this sensor
+    await measurementRepo.delete({ sensorMacAddress: macAddress });
+    
+    // Then delete the sensor itself
+    await sensorRepo.delete({ macAddress, gatewayMac });
   }
 }

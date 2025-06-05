@@ -75,7 +75,7 @@ router.patch(
       await updateSensor(sensorMac, gatewayMac, networkCode, req.body);
       res.status(204).send();
     } catch (error) {
-      console.error("UPDATE SENSOR ROUTE ERROR:", error);
+      // console.error("UPDATE SENSOR ROUTE ERROR:", error);
       next(error instanceof AppError ? error : new AppError("Internal server error", 500));
     }
   }
