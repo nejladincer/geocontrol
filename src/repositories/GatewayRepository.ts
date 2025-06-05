@@ -5,6 +5,8 @@ import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
 import { NetworkDAO } from "@dao/NetworkDAO";
 import { ConflictError } from "@models/errors/ConflictError";
 import { SensorDAO } from "@models/dao/SensorDAO";
+import { MeasurementDAO } from "@models/dao/MeasurementDAO";
+import { NotFoundError } from "@models/errors/NotFoundError";
 
 export class GatewayRepository {
   private repo: Repository<GatewayDAO>;
@@ -61,7 +63,32 @@ export class GatewayRepository {
   }
 
   async deleteGateway(macAddress: string, networkCode: string): Promise<void> {
-    await this.repo.remove(await this.getGatewayByMacAddress(macAddress, networkCode));
+    const gatewayRepo = AppDataSource.getRepository(GatewayDAO);
+    const sensorRepo = AppDataSource.getRepository(SensorDAO);
+    const measurementRepo = AppDataSource.getRepository(MeasurementDAO);
+    
+    // Find the gateway to verify it exists
+    const gateway = await gatewayRepo.findOne({
+      where: { macAddress, networkCode },
+      relations: ['sensors']
+    });
+    
+    if (!gateway) {
+      throw new NotFoundError(`Gateway with macAddress '${macAddress}' not found`);
+    }
+    
+    // For each sensor, delete its measurements
+    if (gateway.sensors) {
+      for (const sensor of gateway.sensors) {
+        await measurementRepo.delete({ sensorMacAddress: sensor.macAddress });
+      }
+      
+      // Delete all sensors belonging to this gateway
+      await sensorRepo.delete({ gatewayMac: macAddress });
+    }
+    
+    // Finally delete the gateway
+    await gatewayRepo.delete({ macAddress, networkCode });
   }
 
   async updateGateway(

@@ -1,6 +1,11 @@
 import { ConflictError } from "@models/errors/ConflictError";
 import { NotFoundError } from "@models/errors/NotFoundError";
 import { isValid, parseISO } from "date-fns";
+import AppError from "@models/errors/AppError";
+import { AppDataSource } from "@database";
+import { NetworkDAO } from "@dao/NetworkDAO";
+import { GatewayDAO } from "@dao/GatewayDAO";
+import { SensorDAO } from "@dao/SensorDAO";
 
 export function findOrThrowNotFound<T>(
   array: T[],
@@ -52,32 +57,112 @@ export function parseStringArrayParam(param?: unknown): string[] | undefined {
 }
 
 /* VALIDATION FUNCTIONS */
-function validName(name: string): boolean {
+function validMacAddress(mac: string): boolean {
   const regexp = /^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/;
-  if (!regexp.test(name)) {
-    return false;
-  }
-
-  return true;
+  return regexp.test(mac);
 }
 
 /* NETWORKS VALIDATION */
 export function validateNetworkCode(networkCode: string): void {
+  // Format validation
   if (!networkCode || typeof networkCode !== "string" || networkCode.length < 3) {
-    throw new Error(`Invalid network ${networkCode}`);
+    throw new AppError(`Invalid network code format: ${networkCode}`, 400);
   }
+}
+
+// Checks if network exists in DB
+export async function verifyNetworkExists(networkCode: string): Promise<NetworkDAO> {
+  validateNetworkCode(networkCode);
+  
+  const networkRepo = AppDataSource.getRepository(NetworkDAO);
+  const network = await networkRepo.findOne({ where: { code: networkCode } });
+  
+  if (!network) {
+    throw new NotFoundError(`Network with code '${networkCode}' not found`);
+  }
+  
+  return network;
 }
 
 /* GATEWAYS VALIDATION */
 export function validateGatewayMac(gatewayMac: string): void {
-  if (!gatewayMac || typeof gatewayMac !== "string" || !validName(gatewayMac)) {
-    throw new Error(`Invalid gateway MAC address ${gatewayMac}`);
+  if (!gatewayMac || typeof gatewayMac !== "string") {
+    throw new AppError(`Invalid gateway MAC address: missing or wrong type`, 400);
   }
+  
+  if (!validMacAddress(gatewayMac)) {
+    throw new AppError(`Invalid gateway MAC address format: ${gatewayMac}`, 400);
+  }
+}
+
+// Checks if gateway exists in DB
+export async function verifyGatewayExists(gatewayMac: string, networkCode: string): Promise<GatewayDAO> {
+  validateGatewayMac(gatewayMac);
+  await verifyNetworkExists(networkCode);
+  
+  const gatewayRepo = AppDataSource.getRepository(GatewayDAO);
+  const gateway = await gatewayRepo.findOne({ 
+    where: { 
+      macAddress: gatewayMac,
+      networkCode: networkCode
+    }
+  });
+  
+  if (!gateway) {
+    throw new NotFoundError(`Gateway with macAddress '${gatewayMac}' not found in network '${networkCode}'`);
+  }
+  
+  return gateway;
 }
 
 /* SENSOR VALIDATION */
 export function validateSensorMac(sensorMac: string): void {
-  if (!sensorMac || typeof sensorMac !== "string" || !validName(sensorMac)) {
-    throw new Error(`Invalid sensor MAC address ${sensorMac}`);
+  if (!sensorMac || typeof sensorMac !== "string") {
+    throw new AppError(`Invalid sensor MAC address: missing or wrong type`, 400);
   }
+  
+  if (!validMacAddress(sensorMac)) {
+    throw new AppError(`Invalid sensor MAC address format: ${sensorMac}`, 400);
+  }
+}
+
+// Checks if sensor exists and validates its relationships
+export async function verifySensorExists(sensorMac: string, gatewayMac: string, networkCode: string): Promise<SensorDAO> {
+  validateSensorMac(sensorMac);
+  validateGatewayMac(gatewayMac);
+  validateNetworkCode(networkCode);
+  
+  const sensorRepo = AppDataSource.getRepository(SensorDAO);
+  
+  // Find gateway and network which the sensor should belong to
+  const sensor = await sensorRepo.findOne({ 
+    relations: ['gateway', 'gateway.network'],
+    where: { 
+      macAddress: sensorMac,
+      gatewayMac: gatewayMac
+    }
+  });
+  
+  if (!sensor) {
+    throw new NotFoundError(`Sensor with macAddress '${sensorMac}' not found for gateway '${gatewayMac}' in network '${networkCode}'`);
+  }
+  
+  // Additional validation to ensure relations match
+  if (!sensor.gateway) {
+    throw new NotFoundError(`Gateway relationship missing for sensor '${sensorMac}'`);
+  }
+  
+  if (sensor.gateway.macAddress !== gatewayMac) {
+    throw new NotFoundError(`Sensor '${sensorMac}' does not belong to gateway '${gatewayMac}'`);
+  }
+  
+  if (!sensor.gateway.network) {
+    throw new NotFoundError(`Network relationship missing for gateway '${gatewayMac}'`);
+  }
+  
+  if (sensor.gateway.network.code !== networkCode) {
+    throw new NotFoundError(`Gateway '${gatewayMac}' does not belong to network '${networkCode}'`);
+  }
+  
+  return sensor;
 }

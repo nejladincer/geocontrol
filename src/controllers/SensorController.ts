@@ -6,6 +6,7 @@ import { mapSensorDAOToDTO } from "@services/mappings/sensorMapperService";
 import { NotFoundError } from "@models/errors/NotFoundError";
 import { ConflictError } from "@models/errors/ConflictError";
 import { BadRequestError } from "@models/errors/BadRequestError";
+import { NetworkRepository } from "@repositories/NetworkRepository";
 
 export async function getAllSensors(networkCode: string, gatewayMac: string): Promise<SensorDTO[]> {
   try {
@@ -100,11 +101,14 @@ export async function updateSensor(
 
 export async function deleteSensor(sensorMac: string, gatewayMac: string, networkCode: string): Promise<void> {
   try {
+    const networkRepo = new NetworkRepository();
+    await networkRepo.getNetworkByCode(networkCode);
+
     const gatewayRepo = new GatewayRepository();
     await gatewayRepo.getGatewayByMacAddress(gatewayMac, networkCode);
 
     const sensorRepo = new SensorRepository();
-    await sensorRepo.deleteSensor(sensorMac, gatewayMac);
+    await sensorRepo.deleteSensor(sensorMac, gatewayMac, networkCode);
   } catch (error) {
     // console.error("[deleteSensor ERROR]", error);
     if (error instanceof AppError) throw error;

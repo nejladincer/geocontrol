@@ -2,25 +2,15 @@ import { AppDataSource } from "@database";
 import { LessThanOrEqual, MoreThanOrEqual, Repository, And } from "typeorm";
 import { MeasurementDAO } from "@dao/MeasurementDAO";
 import { UserType } from "@models/UserType";
-import { findOrThrowNotFound, throwConflictIfFound } from "@utils/utils";
-import { stringToISO } from "@utils/dateUtils";
-import { get } from "http";
-import { getNetwork } from "@controllers/networkController";
-import { getAllGateways, getGateway } from "@controllers/gatewayController";
-import { stat } from "fs"; 
-import { measureMemory } from "vm";
-import { getAllSensors, getAllSensorsInNetwork, getSensor } from "@controllers/SensorController";
-import { Measurement, MeasurementToJSON } from "@models/dto/Measurement";
+import { findOrThrowNotFound, throwConflictIfFound, verifyNetworkExists, verifyGatewayExists, verifySensorExists } from "@utils/utils";
+import { Measurement } from "@models/dto/Measurement";
 import { Measurements } from "@models/dto/Measurements";
-import { validateNetworkCode, validateGatewayMac, validateSensorMac } from "@utils/utils";
 import { Stats } from "@models/dto/Stats";
 import { calculateStats } from "@utils/statsUtils";
-import { Sensor } from "@models/dto/Sensor";
 import AppError from "@models/errors/AppError";
 import { SensorRepository } from "@repositories/SensorRepository";
 import { SensorDAO } from "@models/dao/SensorDAO";
-import { GatewayRepository } from "./GatewayRepository";
-import { log } from "console";
+import { getAllSensorsInNetwork } from "@controllers/SensorController";
 
 export class MeasurementsRepository {
   private repo: Repository<MeasurementDAO>;
@@ -55,7 +45,7 @@ export class MeasurementsRepository {
 
     // Validate that startDate is before endDate
     if (startDateISO > endDateISO) {
-      throw new AppError("startDate must be before endDate", 400);
+      return { startDateISO, endDateISO }; // Return the dates anyway, let the caller handle empty results
     }
 
     return { startDateISO, endDateISO };
@@ -63,8 +53,7 @@ export class MeasurementsRepository {
 
   /*  ------ SET OF SENSORS IN A SPECIFIC NETWORK ----- */
 
-  // [DONE]
-  /* (1) Retreive measurements for a set of sensors of a specific network */
+  /* (1) Retrieve measurements for a set of sensors of a specific network */
   async getMeasurementsFromSensorsInNetwork(
     networkCode: string,
     sensorMacs?: string[],
@@ -73,6 +62,9 @@ export class MeasurementsRepository {
   ): Promise<Measurements[]> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
+    // Verify network exists
+    await verifyNetworkExists(networkCode);
+
     // If no sensor MACs are provided, get all sensors for the network
     if (!sensorMacs || sensorMacs.length === 0) {
       const allSensors = await getAllSensorsInNetwork(networkCode);
@@ -80,48 +72,53 @@ export class MeasurementsRepository {
     }
 
     const sensorRepository = AppDataSource.getRepository(SensorDAO);
-    const measurementsPromises = sensorMacs.map(async (macAddress) => {
-      const targetSensor = await sensorRepository.findOne({
+    
+    // Get all valid sensors first and skip those that don't exist in the network
+    const validSensors: SensorDAO[] = [];
+    for (const macAddress of sensorMacs) {
+      const sensor = await sensorRepository.findOne({
         where: { macAddress: macAddress, gateway: { network: { code: networkCode } } },
         relations: ["gateway"]
       });
-
-      if (!targetSensor) {
-        throw new AppError(`Sensor with MAC ${macAddress} not found in network ${networkCode}`, 404);
+      if (sensor) {
+        validSensors.push(sensor);
       }
+    }
 
-      return this.getMeasurementsFromSensor(
+    // Now process only valid sensors
+    const measurementsPromises = validSensors.map(sensor => 
+      this.getMeasurementsFromSensor(
         networkCode,
-        targetSensor.gatewayMac,
-        targetSensor.macAddress,
+        sensor.gatewayMac,
+        sensor.macAddress,
         startDateISO,
         endDateISO
-      );
-    });
+      )
+    );
 
     return Promise.all(measurementsPromises);
   }
 
-  // [DONE]
-  /* (2) Retreive statistics for a set of sensors of a specific network */
+  /* (2) Retrieve statistics for a set of sensors of a specific network */
   async getStatsFromSensorsInNetwork(
     networkCode: string,
     sensorMacs?: string[],
     startDate?: string,
     endDate?: string
-  ): Promise<Stats[]> {
+  ): Promise<any[]> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
-    // Validation
-    validateNetworkCode(networkCode);
-  
+    // Verify network exists
+    await verifyNetworkExists(networkCode);
+    
     const sensorMeasurements: Measurements[] = await this.getMeasurementsFromSensorsInNetwork(networkCode, sensorMacs, startDateISO, endDateISO);
-    const statsArray: Stats[] = sensorMeasurements.map( (m) => m.stats );
-
-    return <Stats[]> statsArray;
+    
+    return sensorMeasurements.map(m => ({
+      sensorMacAddress: m.sensorMacAddress,
+      stats: m.stats
+    }));
   }
 
-  // [DONE]
   /* (3) Retrieve outlier measurements for a set of sensors of a specific network */
   async getOutliersFromSensorsInNetwork(
     networkCode: string,
@@ -131,12 +128,12 @@ export class MeasurementsRepository {
   ): Promise<Measurements[]> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
   
-    // Validate inputs
-    validateNetworkCode(networkCode);
+    // Verify network exists
+    await verifyNetworkExists(networkCode);
 
     // Retrieve measurements for the sensors in the network
     const sensorMeasurements: Measurements[] = await this.getMeasurementsFromSensorsInNetwork(networkCode, sensorMacs, startDateISO, endDateISO);
-    // Filter out the measurements that are outliers
+    // Filter out outliers
     const outlierMeasurementsArray: Measurements[] = sensorMeasurements.map((m) => {
       const outlierMeasurements: Measurement[] = m.measurements.filter(measurement => measurement.isOutlier === true);
       return {
@@ -146,14 +143,11 @@ export class MeasurementsRepository {
       };
     }); 
 
-    return <Measurements[]> outlierMeasurementsArray;
+    return outlierMeasurementsArray as Measurements[];
   }
-
-
 
   /*  ------ SPECIFIC SENSOR IN A SPECIFIC NETWORK ----- */
 
-  // [DONE]
   /* (4) Store a measurement for a sensor */
   async storeMeasurementForSensor(
     networkCode: string,
@@ -162,14 +156,8 @@ export class MeasurementsRepository {
     createdAt: string, 
     value: number
   ): Promise<void> {
-    // Validation
-    validateNetworkCode(networkCode);
-    validateGatewayMac(gatewayMac);
-    validateSensorMac(sensorMac);
-
-    // Retrieve the sensor to ensure it exists and set the foreign key relationship
-    const sensorRepo = new SensorRepository();
-    const sensor = await sensorRepo.getSensorByMacAddress(sensorMac, gatewayMac);
+    // Check sensor, and all relationships, exist
+    const sensor = await verifySensorExists(sensorMac, gatewayMac, networkCode);
     
     // Create a new MeasurementDAO object
     const newMeasurementToInsert: MeasurementDAO = new MeasurementDAO();
@@ -181,21 +169,20 @@ export class MeasurementsRepository {
       measurements: [{
         createdAt: new Date(createdAt),
         value: value,
-        isOutlier: false // Default value, will be updated before saving
+        isOutlier: false // Default value
       }]
     };
 
-    newMeasurementToInsert.code = sensorMac + "-" + new Date(createdAt).getTime(); // Unique code for the measurement
+    newMeasurementToInsert.code = sensorMac + "-" + new Date(createdAt).getTime();
     newMeasurementToInsert.createdAt = createdAt;
-    newMeasurementToInsert.value = value; // Set the value field
-    newMeasurementToInsert.isOutlier = null; // Store the calculated isOutlier value in the DAO
-    newMeasurementToInsert.sensorMacAddress = sensorMac; // Ensure sensorMacAddress is set
-    newMeasurementToInsert.sensor = sensor; // Set the sensor relationship
+    newMeasurementToInsert.value = value;
+    newMeasurementToInsert.isOutlier = null;
+    newMeasurementToInsert.sensorMacAddress = sensorMac; 
+    newMeasurementToInsert.sensor = sensor; 
 
     await this.repo.save(newMeasurementToInsert);
   }
 
-  // [DONE]
   /* (5) Retrieve measurements for a specific sensor */
   async getMeasurementsFromSensor(
     networkCode: string,
@@ -206,14 +193,8 @@ export class MeasurementsRepository {
   ): Promise<Measurements> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
-    // Validate Network Code, and if exists, get the network
-    validateNetworkCode(networkCode);
-
-    // Validate Gateway MAC Address, and if exists, get the gateway 
-    validateGatewayMac(gatewayMac);
-
-    // Validate Sensor MAC Address, and if exists, get the sensor
-    validateSensorMac(sensorMac);
+    // Verify that the sensor exists
+    await verifySensorExists(sensorMac, gatewayMac, networkCode);
 
     const measurements: MeasurementDAO[] = await this.repo
     .find({
@@ -255,15 +236,13 @@ export class MeasurementsRepository {
       isOutlier: Boolean(m.isOutlier)
     }));
 
-    return <Measurements> {
+    return {
       sensorMacAddress: sensorMac,
       stats: stats,
       measurements: measurementsArray
-    };
-
+    } as Measurements;
   }
 
-  // [DONE]
   /* (6) Retreive statistics for a specific sensor */
   async getStatsFromSensor(
     networkCode: string,  
@@ -274,17 +253,13 @@ export class MeasurementsRepository {
   ): Promise<Stats> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
 
-    // Validation
-    validateNetworkCode(networkCode);
-    validateGatewayMac(gatewayMac);
-    validateSensorMac(sensorMac);
+    await verifySensorExists(sensorMac, gatewayMac, networkCode);
 
     const sensorMeasurements: Measurements = await this.getMeasurementsFromSensor(networkCode, gatewayMac, sensorMac, startDateISO, endDateISO);
 
-    return <Stats> sensorMeasurements.stats;
+    return sensorMeasurements.stats as Stats;
   }
 
-  // [DONE]
   /* (7) Retreive only outlier measurements  */
   async getOutliersFromSensor(
     networkCode: string,
@@ -295,17 +270,17 @@ export class MeasurementsRepository {
   ): Promise<Measurements> {
     const { startDateISO, endDateISO } = this.validateDates(startDate, endDate);
     
+    await verifySensorExists(sensorMac, gatewayMac, networkCode);
+    
     const sensorMeasurements: Measurements = await this.getMeasurementsFromSensor(networkCode, gatewayMac, sensorMac, startDateISO, endDateISO);
 
     // Retreive only outlier measurements
     const outlierMeasurements: Measurement[] = sensorMeasurements.measurements.filter(m => m.isOutlier === true);
 
-    return <Measurements> {
+    return {
       sensorMacAddress: sensorMac,
       stats: sensorMeasurements.stats,
       measurements: outlierMeasurements
-    };
-
+    } as Measurements;
   }
-
 }

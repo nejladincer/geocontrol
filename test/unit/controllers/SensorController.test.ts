@@ -223,7 +223,7 @@ describe("SensorController", () => {
 
   describe("updateSensor", () => {
   const updateDto = {
-    macAddress: sensorMac, // ✅ required now
+    macAddress: sensorMac,
     name: "Updated Sensor",
     description: "Updated description"
   };
