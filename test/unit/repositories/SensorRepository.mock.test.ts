@@ -8,6 +8,7 @@ const mockFind = jest.fn();
 const mockFindOne = jest.fn();
 const mockSave = jest.fn();
 const mockRemove = jest.fn();
+const mockDelete = jest.fn(); // Add delete mock
 
 jest.mock("@database", () => ({
   AppDataSource: {
@@ -16,6 +17,7 @@ jest.mock("@database", () => ({
       findOne: mockFindOne,
       save: mockSave,
       remove: mockRemove,
+      delete: mockDelete, // Include delete in the mock
       create: jest.fn((obj) => obj)
     }))
   }
@@ -54,11 +56,30 @@ describe("SensorRepository: mocked database", () => {
   it("delete sensor", async () => {
     const sensor = new SensorDAO();
     sensor.macAddress = "sensor1";
-    mockFind.mockResolvedValue([sensor]);
-    mockRemove.mockResolvedValue(undefined);
+    mockFindOne.mockResolvedValue(sensor); // Use findOne mock for consistency with implementation
+    mockDelete.mockResolvedValue(undefined);
+    
+    await repo.deleteSensor("AA:BB:CC:DD:EE:FF", "00:1A:2B:3C:4D:5E", "net123");
+    
+    // Verify delete was called for measurements
+    expect(mockDelete).toHaveBeenCalledWith({ 
+      sensorMacAddress: "AA:BB:CC:DD:EE:FF" 
+    });
+    
+    // Verify delete was called for sensor
+    expect(mockDelete).toHaveBeenCalledWith({ 
+      macAddress: "AA:BB:CC:DD:EE:FF", 
+      gatewayMac: "00:1A:2B:3C:4D:5E" 
+    });
+  });
 
-    await repo.deleteSensor("sensor1", "mac1");
-    expect(mockRemove).toHaveBeenCalledWith(sensor);
+  it("delete sensor: not found", async () => {
+    mockFindOne.mockResolvedValue(null);
+    
+    // Call with all 3 parameters
+    await expect(
+      repo.deleteSensor("non-existent", "00:1A:2B:3C:4D:5E", "net123")
+    ).rejects.toThrow(NotFoundError);
   });
 
   it("createSensor: throws if gateway not found", async () => {
