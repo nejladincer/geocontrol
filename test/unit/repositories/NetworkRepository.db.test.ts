@@ -64,6 +64,7 @@ describe("NetworkRepository: SQLite in-memory", () => {
 
     const updated = await repo.updateNetwork(
       "net1",
+      "net1",
       "New Name",
       "New description"
     );
@@ -79,7 +80,7 @@ describe("NetworkRepository: SQLite in-memory", () => {
 
   it("update network: not found", async () => {
     await expect(
-      repo.updateNetwork("non-existent", "New Name", "New description")
+      repo.updateNetwork("non-existent", "non-existent", "New Name", "New description")
     ).rejects.toThrow(NotFoundError);
   });
 

@@ -1,5 +1,6 @@
 import { SensorRepository } from "@repositories/SensorRepository";
 import { GatewayRepository } from "@repositories/GatewayRepository";
+import { NetworkRepository } from "@repositories/NetworkRepository";
 import * as sensorController from "@controllers/SensorController";
 import { SensorDAO } from "@dao/SensorDAO";
 import { GatewayDAO } from "@dao/GatewayDAO";
@@ -8,6 +9,7 @@ import AppError from "@models/errors/AppError";
 
 jest.mock("@repositories/SensorRepository");
 jest.mock("@repositories/GatewayRepository");
+jest.mock("@repositories/NetworkRepository");
 
 describe("SensorController", () => {
   const networkCode = "test-network";
@@ -266,6 +268,10 @@ describe("SensorController", () => {
 
   describe("deleteSensor", () => {
     it("should delete a sensor", async () => {
+      (NetworkRepository as jest.Mock).mockImplementation(() => ({
+        getNetworkByCode: jest.fn().mockResolvedValue({ code: networkCode })
+      }));
+      
       (GatewayRepository as jest.Mock).mockImplementation(() => ({
         getGatewayByMacAddress: jest.fn().mockResolvedValue(mockGateway)
       }));
@@ -300,4 +306,4 @@ describe("SensorController", () => {
         .rejects.toThrow("Failed to delete sensor");
     });
   });
-}); 
+});
