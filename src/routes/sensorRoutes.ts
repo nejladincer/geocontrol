@@ -75,6 +75,7 @@ router.patch(
       await updateSensor(sensorMac, gatewayMac, networkCode, req.body);
       res.status(204).send();
     } catch (error) {
+      // console.error("UPDATE SENSOR ROUTE ERROR:", error);
       next(error instanceof AppError ? error : new AppError("Internal server error", 500));
     }
   }
@@ -94,5 +95,13 @@ router.delete(
     }
   }
 );
+
+router.all("/", (req, res, next) => {
+  if (["GET", "POST"].includes(req.method)) {
+    return next(); // allow valid methods through
+  }
+  res.status(405).json({ error: "Method Not Allowed" });
+});
+
 
 export default router;

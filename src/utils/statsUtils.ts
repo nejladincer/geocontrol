@@ -9,31 +9,15 @@ import { getSensor } from '@controllers/SensorController';
 import { MeasurementsRepository } from '@repositories/MeasurementsRepository';
 import { AppDataSource } from '@database';
 import { MeasurementDAO } from '@models/dao/MeasurementDAO';
-import { isoToDate } from './dateUtils';
 
+// Calculate stats for a set of measurements
 export async function calculateStats(
   measurements: any[],
-  startDate?: string,
-  endDate?: string,
-): Promise<Stats> {
-  let startDateISO, endDateISO;
-
-  // Validate start and end dates
-  if (!startDate) {
-    startDateISO = new Date(0).toISOString(); // Start of time
-  } else {
-    startDateISO = startDate;
-  }
-
-  if (!endDate) {
-    endDateISO = new Date().toISOString(); // Current time
-  } else {
-    endDateISO = endDate;
-  }
-
-  // Handle empty measurements array
-  if (measurements.length === 0) {
-    return <Stats>{
+  startDateISO: string,
+  endDateISO: string,
+): Promise<any> {
+  if (!measurements || measurements.length === 0) {
+    return {
       startDate: new Date(startDateISO),
       endDate: new Date(endDateISO),
       mean: 0,
@@ -43,26 +27,30 @@ export async function calculateStats(
     };
   }
 
-  // Extract values from measurements
-  const values = measurements.map(m => Number(m.value));
+  // Ensure values are parsed as float with full precision
+  const values = measurements.map(m => parseFloat(m.value));
+  
+  // Calculate mean and sum over array
+  const sum = values.reduce((acc, val) => acc + val, 0);
+  const mean = sum / values.length;
 
-  // Calculate mean
-  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  // Replace each item with its squared difference from the mean
+  // and then reduce the array to a scalar value to calculate the variance
+  const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+  const sumSquaredDiffs = squaredDiffs.reduce((acc, val) => acc + val, 0);
+  const variance = sumSquaredDiffs / values.length;
 
-  // Calculate variance
-  const variance = values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
-
-  // Calculate standard deviation and thresholds
+  // Standard deviation and thresholds 
   const stdDev = Math.sqrt(variance);
   const upperThreshold = mean + 2 * stdDev;
   const lowerThreshold = mean - 2 * stdDev;
 
-  return <Stats>{
+  return {
     startDate: new Date(startDateISO),
     endDate: new Date(endDateISO),
-    mean: mean,
-    variance: variance,
-    upperThreshold: upperThreshold,
-    lowerThreshold: lowerThreshold,
+    mean,                
+    variance,            
+    upperThreshold,      
+    lowerThreshold,      
   };
 }

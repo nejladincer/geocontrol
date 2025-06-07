@@ -4,16 +4,31 @@ import { ConflictError } from "@models/errors/ConflictError";
 import { NotFoundError } from "@models/errors/NotFoundError";
 
 const mockFind = jest.fn();
+const mockFindOne = jest.fn();
 const mockSave = jest.fn();
 const mockRemove = jest.fn();
+const mockDelete = jest.fn();
+const mockCreate = jest.fn(); // Add a mock for create method
 
 jest.mock("@database", () => ({
   AppDataSource: {
     getRepository: jest.fn(() => ({
       find: mockFind,
-      findOne: mockFind,
+      findOne: mockFindOne,
       save: mockSave,
-      remove: mockRemove
+      remove: mockRemove,
+      delete: mockDelete,
+      create: mockCreate // Add the create mock to the returned object
+    })),
+    transaction: jest.fn(async (callback) => callback({
+      getRepository: () => ({
+        find: mockFind,
+        findOne: mockFindOne,
+        save: mockSave,
+        remove: mockRemove,
+        delete: mockDelete,
+        create: mockCreate
+      })
     }))
   }
 }));
@@ -23,6 +38,8 @@ describe("NetworkRepository: mocked database", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default implementation for mockCreate
+    mockCreate.mockImplementation(entity => entity);
   });
 
   it("get all networks", async () => {
@@ -86,40 +103,114 @@ describe("NetworkRepository: mocked database", () => {
 
   it("update network", async () => {
     const existingNetwork = { code: "net1", name: "Old Name", description: "Old description" };
-    mockFind.mockResolvedValue([existingNetwork]);
+    
+    mockFindOne.mockResolvedValue(existingNetwork);
     
     const updatedNetwork = { ...existingNetwork, name: "New Name", description: "New description" };
     mockSave.mockResolvedValue(updatedNetwork);
 
-    const result = await repo.updateNetwork("net1", "New Name", "New description");
+    const result = await repo.updateNetwork("net1", "net1", "New Name", "New description");
 
     expect(result).toEqual(updatedNetwork);
     expect(mockSave).toHaveBeenCalledWith(updatedNetwork);
   });
 
-  it("update network: not found", async () => {
-    mockFind.mockResolvedValue([]);
+  it("update network: without changing code", async () => {
+    // Mock network found
+    mockFindOne.mockResolvedValueOnce({
+      code: "net1",
+      name: "Old Name",
+      description: "Old description"
+    });
+    
+    const updatedNetwork = {
+      code: "net1",
+      name: "New Name",
+      description: "New description"
+    };
+    
+    mockSave.mockResolvedValue(updatedNetwork);
+
+    // Update call with all 4 parameters
+    const result = await repo.updateNetwork("net1", "net1", "New Name", "New description");
+
+    expect(result).toEqual(updatedNetwork);
+    // Rest of the test remains the same
+  });
+
+  it("update network: with code change", async () => {
+    // First mock finding the original network
+    mockFindOne.mockResolvedValueOnce({ 
+      code: "net1", 
+      name: "Old Name", 
+      description: "Old description",
+      gateways: []
+    });
+    
+    // Then mock checking for existing network with new code (should return null)
+    mockFindOne.mockResolvedValueOnce(null);
+    
+    // Mock the newly created network
+    mockCreate.mockReturnValue({
+      code: "net2",
+      name: "New Name",
+      description: "New description"
+    });
+    
+    const updatedNetwork = { code: "net2", name: "New Name", description: "New description" };
+    mockSave.mockResolvedValue(updatedNetwork);
+    
+    // Mock findOne for retrieving the final result
+    mockFindOne.mockResolvedValueOnce(updatedNetwork);
+
+    // Call with 4 parameters (old code, new code, new name, new description)
+    const result = await repo.updateNetwork("net1", "net2", "New Name", "New description");
+    
+    expect(result).toEqual(updatedNetwork);
+    expect(mockCreate).toHaveBeenCalledWith({
+      code: "net2",
+      name: "New Name",
+      description: "New description"
+    });
+  });
+
+  it("update network: conflict on code change", async () => {
+    mockFind.mockResolvedValue([{ code: "net2" }]);
 
     await expect(
-      repo.updateNetwork("non-existent", "New Name", "New description")
+      repo.updateNetwork("net1", "net2", "New Name", "New description")
+    ).rejects.toThrow(ConflictError);
+  });
+
+  it("update network: not found", async () => {
+    mockFindOne.mockResolvedValue(null);
+
+    await expect(
+      repo.updateNetwork("non-existent", "net1", "New Name", "New description")
     ).rejects.toThrow(NotFoundError);
   });
 
   it("delete network", async () => {
-    const network = { code: "net1", name: "Network 1", description: "Test network" };
-    mockFind.mockResolvedValue([network]);
-    mockRemove.mockResolvedValue(undefined);
+    const network = { 
+      code: "net1", 
+      name: "Network 1", 
+      description: "Test network",
+      gateways: [] 
+    };
+    
+    mockFindOne.mockResolvedValue(network);
+    mockDelete.mockResolvedValue(undefined);
 
     await repo.deleteNetwork("net1");
 
-    expect(mockRemove).toHaveBeenCalledWith(network);
+    expect(mockDelete).toHaveBeenCalledWith({ code: "net1" });
   });
 
   it("delete network: not found", async () => {
-    mockFind.mockResolvedValue([]);
+    mockFindOne.mockResolvedValue(null);
 
     await expect(repo.deleteNetwork("non-existent")).rejects.toThrow(
       NotFoundError
     );
   });
-}); 
+});

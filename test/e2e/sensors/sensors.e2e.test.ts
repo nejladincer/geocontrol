@@ -177,7 +177,8 @@ describe("Sensors API (e2e)", () => {
 
 
   describe("PATCH /networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac", () => {
-  const updateData = {
+  const validUpdateData = {
+    macAddress: sensorMac, // ✅ REQUIRED
     name: "Updated Sensor",
     description: "Updated desc"
   };
@@ -186,7 +187,7 @@ describe("Sensors API (e2e)", () => {
     const res = await request(app)
       .patch(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
       .set("Authorization", `Bearer ${adminToken}`)
-      .send(updateData);
+      .send(validUpdateData);
     expect(res.status).toBe(204);
   });
 
@@ -194,7 +195,7 @@ describe("Sensors API (e2e)", () => {
     const res = await request(app)
       .patch(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
       .set("Authorization", `Bearer ${operatorToken}`)
-      .send(updateData);
+      .send(validUpdateData);
     expect(res.status).toBe(204);
   });
 
@@ -202,7 +203,7 @@ describe("Sensors API (e2e)", () => {
     const res = await request(app)
       .patch(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
       .set("Authorization", `Bearer ${viewerToken}`)
-      .send(updateData);
+      .send(validUpdateData);
     expect(res.status).toBe(403);
   });
 
@@ -210,10 +211,37 @@ describe("Sensors API (e2e)", () => {
     const res = await request(app)
       .patch(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/non-existent`)
       .set("Authorization", `Bearer ${adminToken}`)
-      .send(updateData);
+      .send({ ...validUpdateData, macAddress: "non-existent" });
     expect(res.status).toBe(404);
   });
+
+  it("should return 400 if macAddress is missing", async () => {
+    const { macAddress, ...incompleteBody } = validUpdateData;
+    const res = await request(app)
+      .patch(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send(incompleteBody);
+    expect(res.status).toBe(400);
+  });
+
+  it("should return 400 if macAddress is empty", async () => {
+    const res = await request(app)
+      .patch(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ ...validUpdateData, macAddress: "" });
+    expect(res.status).toBe(400);
+  });
+
+  it("should return 409 if macAddress is duplicate", async () => {
+    // Attempt to update sensorMac to sensor-002 (already created earlier)
+    const res = await request(app)
+      .patch(`/api/v1/networks/${networkCode}/gateways/${gatewayMac}/sensors/${sensorMac}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ ...validUpdateData, macAddress: "sensor-002" });
+    expect(res.status).toBe(409);
+  });
 });
+
 
 
   describe("DELETE /networks/:networkCode/gateways/:gatewayMac/sensors/:sensorMac", () => {

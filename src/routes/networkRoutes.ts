@@ -21,7 +21,7 @@ interface AuthenticatedRequest extends Request {
 const router = Router();
 
 // Get all networks (Any authenticated user)
-router.get("", authenticateUser(), async (req, res, next) => {
+router.get("/", authenticateUser(), async (req, res, next) => {
   try {
     const networks = await getAllNetworks();
     res.status(200).json(networks);
@@ -33,6 +33,19 @@ router.get("", authenticateUser(), async (req, res, next) => {
     }
   }
 });
+
+// Handle 405 for the root path (PATCH)
+router.patch("/", authenticateUser(), (req, res, next) => {
+  res.status(405).send();
+});
+
+// Handle 405 for the root path (DELETE)
+router.delete("/", authenticateUser(), (req, res, next) => {
+  res.status(405).send();
+});
+
+
+
 
 // Create a new network (Admin & Operator)
 router.post("", authenticateUser([UserType.Admin, UserType.Operator]), async (req: AuthenticatedRequest, res, next) => {
@@ -53,6 +66,9 @@ router.post("", authenticateUser([UserType.Admin, UserType.Operator]), async (re
     }
   }
 });
+
+
+
 
 // Get a specific network (Any authenticated user)
 router.get("/:networkCode", authenticateUser(), async (req, res, next) => {
@@ -96,5 +112,6 @@ router.delete("/:networkCode", authenticateUser([UserType.Admin, UserType.Operat
     }
   }
 });
+
 
 export default router;

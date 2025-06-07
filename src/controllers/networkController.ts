@@ -2,6 +2,8 @@ import { Network as NetworkDTO } from "@dto/Network";
 import { NetworkRepository } from "@repositories/NetworkRepository";
 import { mapNetworkDAOToDTO } from "@services/mappings/networkMapperService";
 import AppError from "@models/errors/AppError";
+import { NotFoundError } from "@models/errors/NotFoundError";
+import { ConflictError } from "@models/errors/ConflictError";
 
 export async function getAllNetworks(): Promise<NetworkDTO[]> {
   try {
@@ -19,7 +21,7 @@ export async function getNetwork(code: string): Promise<NetworkDTO> {
   } catch (error) {
     if (error instanceof AppError) {
       if (error.message.includes("not found")) {
-        throw new AppError("Network not found", 404);
+        throw new NotFoundError(`Network not found`);
       }
     }
     throw new AppError("Internal server error", 500);
@@ -41,7 +43,7 @@ export async function createNetwork(networkDto: NetworkDTO): Promise<void> {
   } catch (error) {
     if (error instanceof AppError) {
       if (error.message.includes("already exists")) {
-        throw new AppError("Network code already in use", 409);
+        throw new ConflictError(`Network code already in use`);
       }
     }
     throw new AppError("Internal server error", 500);
@@ -52,23 +54,38 @@ export async function updateNetwork(
   code: string,
   networkDto: NetworkDTO
 ): Promise<void> {
+  // Check for empty code in the request body
+  if (networkDto.code !== undefined && networkDto.code.trim() === '') {
+    throw new AppError("Network code cannot be empty", 400);
+  }
+  
   try {
     const networkRepo = new NetworkRepository();
+    
+    // If code is not provided in the request body, use the code from the URL parameter
+    const newCode = networkDto.code || code;
+    
     await networkRepo.updateNetwork(
       code,
+      newCode, 
       networkDto.name,
-      networkDto.description
+      networkDto.description 
     );
   } catch (error) {
-    if (error instanceof AppError) {
+    if (error instanceof NotFoundError) {
+      throw error; 
+    } else if (error instanceof ConflictError) {
+      throw error; 
+    } else if (error instanceof AppError) {
       if (error.message.includes("not found")) {
-        throw new AppError("Network not found", 404);
+        throw new NotFoundError("Network not found");
+      } else if (error.message.includes("already exists") || error.message.includes("already in use")) {
+        throw new ConflictError("Network code already in use");
       }
-      if (error.message.includes("already exists")) {
-        throw new AppError("Network code already in use", 409);
-      }
+      throw error;
+    } else {
+      throw new AppError("Internal server error", 500);
     }
-    throw new AppError("Internal server error", 500);
   }
 }
 
@@ -77,11 +94,15 @@ export async function deleteNetwork(code: string): Promise<void> {
     const networkRepo = new NetworkRepository();
     await networkRepo.deleteNetwork(code);
   } catch (error) {
-    if (error instanceof AppError) {
+    if (error instanceof NotFoundError) {
+      throw new NotFoundError("Network not found");
+    } else if (error instanceof AppError) {
       if (error.message.includes("not found")) {
-        throw new AppError("Network not found", 404);
+        throw new NotFoundError("Network not found");
       }
+      throw error;
+    } else {
+      throw new AppError("Internal server error", 500);
     }
-    throw new AppError("Internal server error", 500);
   }
-} 
+}

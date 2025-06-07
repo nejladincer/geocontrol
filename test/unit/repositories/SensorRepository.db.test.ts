@@ -92,7 +92,7 @@ describe("SensorRepository: SQLite in-memory", () => {
     const gateway = await TestDataSource.getRepository(GatewayDAO).save({ macAddress: "mac1", name: "GW", description: "D", network });
 
     await repo.createSensor("sensor1", "S1", "D", "var", "unit", "mac1");
-    await repo.deleteSensor("sensor1", "mac1");
+    await repo.deleteSensor("sensor1", "mac1", "net1");
 
     await expect(
       repo.getSensorByMacAddress("sensor1", "mac1")

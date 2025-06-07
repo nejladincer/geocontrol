@@ -10,7 +10,7 @@ export class MeasurementDAO {
   @Column({ nullable: false }) 
   createdAt: string;
 
-  @Column({ nullable: false })
+  @Column({ type: "float", precision: 10, scale: 6, nullable: false })
   value: number;
 
   @Column({ nullable: true })
